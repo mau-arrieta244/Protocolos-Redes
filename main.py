@@ -17,7 +17,9 @@ class Maquina:
             paquete = self.capaRed.enviarPaquete()
             if paquete:
                 self.paquetesRed_Enlace.append(paquete)
+                #target.insert("\nPaquete recibido en enlace..\n")
                 print("\nPaquete recibido en enlace..\n")
+                #target.insert("\nLast packet: "+self.paquetesRed_Enlace[-1]+"\n")
                 print("\nLast packet: "+self.paquetesRed_Enlace[-1]+"\n")
                 time.sleep(2)
             
@@ -73,7 +75,7 @@ class CapaEnlace:
 
 
 
-
+'''
 a = Maquina('A',24)
 
 t1 = threading.Thread(target=a.capaRed.generarPaquetes)
@@ -84,5 +86,7 @@ t2.start()
 
 t1.join()
 t2.join()
+'''
+
     
 

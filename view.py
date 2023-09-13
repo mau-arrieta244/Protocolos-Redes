@@ -1,6 +1,9 @@
 from tkinter import *
 from tkinter import ttk
+import threading
 from PIL import ImageTk,Image
+import main
+
 
 
 root = Tk()
@@ -47,7 +50,7 @@ def startSimulation():
                   font="Helvetica 20")
     label2.place(x=20,y=20)
 
-    #compuImage = Image.open("computer.png")
+    
     photo = ImageTk.PhotoImage(file='images/computer.png')
     img_label = Label(frame2,image=photo)
     img_label.photo = photo
@@ -61,6 +64,27 @@ def startSimulation():
 
     btn3 = Button(frame2,image=photo2,borderwidth=0)
     btn3.place(x=340,y=70)
+
+    T = Text(frame2, height = 5, width = 60)
+    T.insert(END,chars='') 
+    T.place(x=50,y=300)
+
+    def startUtopia():
+        a = main.Maquina('A',24)
+
+        t1 = threading.Thread(target=a.capaRed.generarPaquetes)
+        t2 = threading.Thread(target=a.toLinkLayer)
+
+        t1.start()
+        t2.start()
+
+        t1.join()
+        t2.join()
+    
+    
+    
+    btn4 = Button(frame2,text="Start",font="Helvetica 15",command=startUtopia)
+    btn4.place(x=485,y=20)
 
 
 #======================================================
