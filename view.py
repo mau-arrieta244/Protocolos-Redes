@@ -47,15 +47,17 @@ def startSimulation():
 
     match tipoSimulacion:
         case 'Utopia':
-            a = classes.utopia.Utopia('a',1)
-            t1 = threading.Thread(target=a.capaRed.generarPaquetes)
-            t2 = threading.Thread(target=a.toLinkLayer)
-
-            t1.start()
-            t2.start()
+            maquina1 = classes.utopia.Utopia('Utopia_A',1)
+            maquina2 = classes.utopia.Utopia('Utopia_B',2)
+      
         case _:
             print("Otra maquina")
-
+            return
+    
+    t1 = threading.Thread(target=maquina1.capaRed.generarPaquetes)
+    t2 = threading.Thread(target=maquina1.toLinkLayer)
+    t1.start()
+    t2.start()
 
     
 

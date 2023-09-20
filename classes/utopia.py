@@ -15,9 +15,9 @@ class Utopia(maquina.Maquina):
             if self.condicionToLinkLayer:
                 paquete = self.capaRed.enviarPaquete()
                 if paquete:
-                    self.paquetesRed_Enlace.append(paquete)
+                    self.capaEnlace.framesEnviar.append(paquete)
                     print("\nUtopia Paquete recibido en enlace..\n")
-                    print("\nLast packet: "+self.paquetesRed_Enlace[-1]+"\n")
+                    print("\nLast packet: "+self.capaEnlace.framesEnviar[-1]+"\n")
                     time.sleep(3)
             else:
                 pass
@@ -49,17 +49,25 @@ class Utopia(maquina.Maquina):
                 else:
                     pass
 
-        #Retorna el primer paquete de self.paquetes
-        #"envia" paquete a capa enlace
+        '''
+        Retorna ultimo paquete generado en self.paquetes
+        Lo utiliza Maquina para enviar a CapaEnlace.framesEnviar
+        '''
         def enviarPaquete(self):
             if self.paquetes:
-                return(self.paquetes[-1])
+                last = self.paquetes[-1]
+                self.paquetes.clear()
+                return(last)
 
     class CapaEnlace:
 
         def __init__(self):
             self.framesEnviar = []
-            self.framesRecibidos = []
         
-        def getFramesEnviar(self):
-            return(self.framesEnviar)
+        def fake(self):
+            while(True):
+                print("\n========================\n")
+                for elemento in self.framesEnviar:
+                    print(elemento)
+                print("\n========================\n")
+                time.sleep()
