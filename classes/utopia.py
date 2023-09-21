@@ -1,5 +1,6 @@
 import classes.maquina as maquina
 import time
+import threading
 
 class Utopia(maquina.Maquina):
 
@@ -7,27 +8,50 @@ class Utopia(maquina.Maquina):
         super().__init__(pName, pId)
         self.capaRed = self.CapaRed()
         self.capaEnlace = self.CapaEnlace()
-        self.paquetesRed_Enlace = []
-        self.condicionToLinkLayer = True
+        self.pausa = False
+        self.capaFisicaRecibidos = []
 
     def toLinkLayer(self):
+        '''
+        Obtiene paquete de capaRed, lo envía a capaEnlace
+        '''
         while(True):
-            if self.condicionToLinkLayer:
+            if not self.pausa:
                 paquete = self.capaRed.enviarPaquete()
                 if paquete:
                     self.capaEnlace.framesEnviar.append(paquete)
-                    print("\nUtopia Paquete recibido en enlace..\n")
-                    print("\nLast packet: "+self.capaEnlace.framesEnviar[-1]+"\n")
                     time.sleep(3)
             else:
                 pass
+
+    def startMachine(self,maquinaDestino:maquina.Maquina):
+        
+        t1 = threading.Thread(target=self.capaRed.generarPaquetes)
+        t2 = threading.Thread(target=self.toLinkLayer)
+        t3 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino))
+        t1.start()
+        t2.start()
+        t3.start()
+
+    def pauseMachine(self):
+        
+        self.pausa = True
+        self.capaRed.pausa = True
+        self.capaEnlace.pausa = True
+
+    def resumeMachine(self):
+        
+        self.pausa = False
+        self.capaRed.pausa = False
+        self.capaEnlace.pausa = False
+        
 
     class CapaRed:
     
         def __init__(self):
             self.paquetes = []
             self.framesRecibidos = []
-            self.condicionGenerarPaquetes = True
+            self.pausa = False
     
 
         '''
@@ -40,10 +64,11 @@ class Utopia(maquina.Maquina):
         def generarPaquetes(self):
             count = 0
             while(True):
-                if self.condicionGenerarPaquetes:
+                if not self.pausa:
                     string = str(count)+"abcd"
                     self.paquetes.append(string)
                     count+=1
+                    print('\nCondicion paquetes:'+str(self.pausa))
                     print("\nUtopia Paquete generado\n")
                     time.sleep(3)
                 else:
@@ -63,11 +88,19 @@ class Utopia(maquina.Maquina):
 
         def __init__(self):
             self.framesEnviar = []
+            self.pausa = False
         
-        def fake(self):
+        def toPhysicalLayer(self,maquinaDestino:maquina.Maquina):
             while(True):
-                print("\n========================\n")
-                for elemento in self.framesEnviar:
-                    print(elemento)
-                print("\n========================\n")
-                time.sleep()
+                if not self.pausa:
+                    if self.framesEnviar:
+                        paquete = self.framesEnviar[0]
+                        maquinaDestino.capaFisicaRecibidos.append(paquete)
+                        print("\n=============================\n")
+                        print("\nUtopia Paquete recibido en otra maquina!\n")
+                        print("\nLast packet: "+maquinaDestino.capaFisicaRecibidos[-1]+"\n")
+                        print("\n=============================\n")
+                        self.framesEnviar.clear()
+                        time.sleep(3)
+                else:
+                    pass

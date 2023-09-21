@@ -8,6 +8,8 @@ class Maquina:
         self.capaEnlace = self.CapaEnlace()
         self.paquetesRed_Enlace = []
         self.condicionToLinkLayer = True
+        self.capaFisicaRecibidos = []
+        self.pausa = False
 
     
 

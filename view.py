@@ -6,6 +6,7 @@ import classes.utopia,classes.maquina
 
 
 
+
 root = Tk()
 root.title('Seleccion de Protocolo')
 
@@ -38,41 +39,53 @@ combobox.place(x=10,y=40)
 
 
 
+
 # Iniciar Simulacion Seleccionada =====================================
 # Esto podría ser un Factory...  pero bruh 
 
 def startSimulation():
+    global maquina1
+    global maquina2
     tipoSimulacion = combobox.get()
-    print("\ntipo sim: "+tipoSimulacion)
 
     match tipoSimulacion:
         case 'Utopia':
             maquina1 = classes.utopia.Utopia('Utopia_A',1)
             maquina2 = classes.utopia.Utopia('Utopia_B',2)
-      
+            maquina1.startMachine(maquina2)
+
+        case 'StopAndWait':
+            pass
+
+        case 'PAR':
+            pass
+
+        case 'sliding':
+            pass
+
+        case 'goBack':
+            pass
+
+        case 'selective':
+            pass
+            
         case _:
             print("Otra maquina")
             return
     
-    t1 = threading.Thread(target=maquina1.capaRed.generarPaquetes)
-    t2 = threading.Thread(target=maquina1.toLinkLayer)
-    t1.start()
-    t2.start()
 
-    
+
+
 
 # Pausar Simulacion Seleccionada =====================================
 
-def pauseSimulation(maquina):
-    maquina.condicionToLinkLayer = False
-    maquina.CapaRed.condicionGenerarPaquetes = False
-
+def pauseSimulation():
+    maquina1.pauseMachine()
 
 # Continuar Simulacion pausada =====================================
 
-def resumeSimulation(maquina):
-    maquina.condicionToLinkLayer = True
-    maquina.CapaRed.condicionGenerarPaquetes = True
+def resumeSimulation():
+    maquina1.resumeMachine()
 
 
 # Boton inicio =========================================
@@ -88,7 +101,7 @@ btn.place(x=250,y=10)
 
 
 btn = Button(frame,text="Pausar",font="Helvetica 10",
-             command=lambda:pauseSimulation(a),
+             command=lambda:pauseSimulation(),
              width=15,height=2)
 btn.place(x=400,y=10)
 
@@ -97,7 +110,7 @@ btn.place(x=400,y=10)
 
 
 btn = Button(frame,text="Resumir",font="Helvetica 10",
-             command=lambda:resumeSimulation(a),
+             command=lambda:resumeSimulation(),
              width=15,height=2)
 btn.place(x=550,y=10)
 
