@@ -90,6 +90,9 @@ class Utopia(maquina.Maquina):
             self.framesEnviar = []
             self.pausa = False
         
+        '''
+        Importante!! acordarme que aca hay que mandar un FRAME formateado , no un paquete suelto.
+        '''
         def toPhysicalLayer(self,maquinaDestino:maquina.Maquina):
             while(True):
                 if not self.pausa:
