@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import threading
 from PIL import ImageTk
-import classes.utopia,classes.maquina
+import classes.utopia,classes.selectiveRepeat
 
 
 
@@ -33,7 +33,7 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 options = ['Utopia','Stop and Wait']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
-combobox['values'] = ['Utopia','Stop and Wait']
+combobox['values'] = ['Utopia','Stop and Wait','Selective Repeat']
 combobox.place(x=10,y=40)
 
 
@@ -66,8 +66,10 @@ def startSimulation():
         case 'goBack':
             pass
 
-        case 'selective':
-            pass
+        case 'Selective Repeat':
+            maquina1 = classes.selectiveRepeat.SelectiveRepeat('selective_A',1)
+            maquina2 = classes.selectiveRepeat.SelectiveRepeat('selective_B',2)
+            maquina1.startMachine(maquina2)
             
         case _:
             print("Otra maquina")

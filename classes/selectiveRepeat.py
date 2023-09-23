@@ -1,63 +1,134 @@
 
 import time
 import threading
+import classes.maquina as maquina
+import classes.frame as frame
 
-import random
-import time
+class SelectiveRepeat(maquina.Maquina):
 
-import random
-import time
+    def __init__(self, pName, pId):
+        super().__init__(pName, pId)
+        self.capaRed = self.CapaRed()
+        self.capaEnlace = self.CapaEnlace()
+        self.pausa = False
+        self.capaFisicaRecibidos = []
 
-class Machine:
-    def __init__(self, name):
-        self.name = name
-        self.buffer = []  # Store packets to be sent
-        self.window_size = 4
-        self.expected_seq_num = 0
-
-    def send_packet(self, destination):
-        if len(self.buffer) < self.window_size:
-            packet = f"Packet {self.expected_seq_num}"
-            print(f"{self.name} sent: {packet}")
-            destination.receive_packet(packet)
-            self.buffer.append(packet)
-            self.expected_seq_num += 1
-        else:
-            print(f"{self.name}: Window is full, waiting for acknowledgments...")
-
-    def receive_ack(self, ack_num):
-        print(f"{self.name} received ACK: {ack_num}")
-        if ack_num >= self.expected_seq_num:
-            self.buffer = [packet for packet in self.buffer if int(packet.split()[-1]) > ack_num]
-            self.expected_seq_num = ack_num + 1
-
-    def receive_packet(self, packet):
-        if random.random() < 0.8:  # Simulate packet loss
-            print(f"{self.name} received: {packet}")
-            time.sleep(1)  # Simulate processing delay
-            ack_num = int(packet.split()[-1])
-            if ack_num == self.expected_seq_num:
-                self.expected_seq_num += 1
-                self.send_ack(ack_num)
+    def toLinkLayer(self):
+        '''
+        Obtiene paquete de capaRed, lo envía a capaEnlace
+        '''
+        while(True):
+            if not self.pausa:
+                paquete = self.capaRed.enviarPaquete()
+                if paquete:
+                    self.capaEnlace.paquetes.append(paquete)
+                    #self.capaEnlace.framesEnviar.append(paquete)
+                    time.sleep(3)
             else:
-                self.send_ack(ack_num)  # Send duplicate ACK for already received packet
-        else:
-            print(f"{self.name} lost: {packet}")
-            self.send_ack(self.expected_seq_num - 1)  # Retransmit last ACK
+                pass
 
-    def send_ack(self, ack_num):
-        print(f"{self.name} sent ACK: {ack_num}")
-        self.sender.receive_ack(ack_num)
+    def startMachine(self,maquinaDestino:maquina.Maquina):
+        
+        t1 = threading.Thread(target=self.capaRed.generarPaquetes)
+        t2 = threading.Thread(target=self.toLinkLayer)
+        t3 = threading.Thread(target=self.capaEnlace.crearFrames)
+        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino))
 
-# Create two machines
-machine_A = Machine("Machine A")
-machine_B = Machine("Machine B")
+        t1.start()
+        t2.start()
+        t3.start()
+        t4.start()
 
-# Set each machine's sender reference
-machine_A.sender = machine_B
-machine_B.sender = machine_A
+    def pauseMachine(self):
+        
+        self.pausa = True
+        self.capaRed.pausa = True
+        self.capaEnlace.pausa = True
 
-# Simulate communication
-for i in range(10):
-    machine_A.send_packet(machine_B)
-    time.sleep(2)  # Simulate time passing
+    def resumeMachine(self):
+        
+        self.pausa = False
+        self.capaRed.pausa = False
+        self.capaEnlace.pausa = False
+        
+
+    class CapaRed:
+    
+        def __init__(self):
+            self.paquetes = []
+            self.framesRecibidos = []
+            self.pausa = False
+    
+
+        '''
+        Genera paquetes con strings aleatorios
+        Los almacena en self.paquetes
+        De self.paquetes se enviaran a CapaEnlace
+        En CapaEnlace se convierten en Frames
+        En CapaEnlace se almacenan en framesEnviar
+        '''
+        def generarPaquetes(self):
+            count = 0
+            while(True):
+                if not self.pausa:
+                    string = str(count)+"abcd"
+                    self.paquetes.append(string)
+                    count+=1
+                    #print('\nCondicion paquetes:'+str(self.pausa))
+                    #print("\nUtopia Paquete generado\n")
+                    time.sleep(3)
+                else:
+                    pass
+
+        '''
+        Retorna ultimo paquete generado en self.paquetes
+        Lo utiliza Maquina para enviar a CapaEnlace.framesEnviar
+        '''
+        def enviarPaquete(self):
+            if self.paquetes:
+                last = self.paquetes[-1]
+                self.paquetes.clear()
+                return(last)
+
+    class CapaEnlace:
+
+        def __init__(self):
+            self.framesEnviar = []
+            self.paquetes = []
+            self.pausa = False
+        
+        '''
+        Por hacer:
+        -esperar ack o nak para enviar frames de acuerdo con la ventana.
+        -comunicarme tambien con capa red, pasarle los paquetes recibidos, en  orden
+        '''
+        def toPhysicalLayer(self,maquinaDestino:maquina.Maquina):
+            while(True):
+                if not self.pausa:
+                    if self.framesEnviar:
+                        sendingFrame = self.framesEnviar[0]
+                        maquinaDestino.capaFisicaRecibidos.append(sendingFrame)
+                        self.framesEnviar.clear()
+                        print("\n=============================\n")
+                        print("\nSelective Repeat Frame recibido en otra maquina!\n")
+                        print("\nLast Frame: "+maquinaDestino.capaFisicaRecibidos[-1].packet+"\n")
+                        print("\n=============================\n")
+                        time.sleep(3)
+                else:
+                    pass
+        '''
+        Un ciclo que revisa si ha recibido paquetes de capaRed
+        Si hay paquetes, los convierte a Frames y agrega a framesEnviar []
+        '''
+        def crearFrames(self):
+            count = 0
+            while(True):
+                if not self.pausa:
+                    if self.paquetes:
+                        paquete = self.paquetes[0]
+                        newFrame = frame.Frame(count,paquete,'Data')
+                        self.framesEnviar.append(newFrame)
+                        self.paquetes.clear()
+                        time.sleep(2)
+                else:
+                    pass
