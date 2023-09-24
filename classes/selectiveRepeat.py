@@ -32,7 +32,7 @@ class SelectiveRepeat(maquina.Maquina):
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
         t3 = threading.Thread(target=self.capaEnlace.crearFrames)
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino))
+        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,4))
 
         t1.start()
         t2.start()
@@ -94,26 +94,50 @@ class SelectiveRepeat(maquina.Maquina):
 
         def __init__(self):
             self.framesEnviar = []
+            self.window = []
             self.paquetes = []
             self.pausa = False
         
+
+        def sendItems(maquinaDestino:maquina.Maquina):
+            pass
+
+
         '''
         Por hacer:
-        -esperar ack o nak para enviar frames de acuerdo con la ventana.
-        -comunicarme tambien con capa red, pasarle los paquetes recibidos, en  orden
+        -Esperar ack o nak para enviar frames de acuerdo con la ventana.
+        -
         '''
-        def toPhysicalLayer(self,maquinaDestino:maquina.Maquina):
+        def toPhysicalLayer(self,maquinaDestino:maquina.Maquina,windowSize):
             while(True):
                 if not self.pausa:
+                    #checkear acks o naks que hayan llegado...(missing)
+                    #si window size es 2, hasta que lleguen ambos acks o naks libero window
+
+                    #si hay frames listos
                     if self.framesEnviar:
-                        sendingFrame = self.framesEnviar[0]
-                        maquinaDestino.capaFisicaRecibidos.append(sendingFrame)
-                        self.framesEnviar.clear()
-                        print("\n=============================\n")
-                        print("\nSelective Repeat Frame recibido en otra maquina!\n")
-                        print("\nLast Frame: "+maquinaDestino.capaFisicaRecibidos[-1].packet+"\n")
-                        print("\n=============================\n")
-                        time.sleep(3)
+                        #vamos llenando self.window
+                        if (len(self.window)<windowSize):
+                            sendingFrame = self.framesEnviar.pop(0)
+                            self.window.append(sendingFrame)
+                            time.sleep(3)
+
+                        #ventana llena
+                        elif (len(self.window)==windowSize):
+                            while(self.window):
+                                sendingFrame = self.window.pop(0)
+                                maquinaDestino.capaFisicaRecibidos.append(sendingFrame)
+                                print("\n ================== \n")
+                                print("\n Frame %s recibido en maquina B !\n" % (sendingFrame.sequenceNumber))
+                                print("\n ================== \n")
+                                time.sleep(1)
+                            #  1) acks llegaron? limpiar window 
+                            #  2) no han llegado? wait
+
+
+                        else:
+                            print("Condicion rara... revisar")
+                            time.sleep(3)
                 else:
                     pass
         '''
@@ -129,6 +153,11 @@ class SelectiveRepeat(maquina.Maquina):
                         newFrame = frame.Frame(count,paquete,'Data')
                         self.framesEnviar.append(newFrame)
                         self.paquetes.clear()
-                        time.sleep(2)
+                        print("\n Frame %d creado en enlace.. \n" % newFrame.sequenceNumber)
+                        count+=1
+                        time.sleep(1)
                 else:
                     pass
+
+                    
+        '''Comunicarme tambien con capa red, pasarle los paquetes recibidos, en  orden'''
