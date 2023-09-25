@@ -165,6 +165,7 @@ class SelectiveRepeat(maquina.Maquina):
                                         else:
                                             
                                             resendFrame = self.getFrameById(id)
+                                            print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
                                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
                                             #borrar el nak pero no el frame de window
                                             self.capaFisicaRecibidos.remove(elemento)
