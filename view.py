@@ -70,6 +70,7 @@ def startSimulation():
             maquina1 = classes.selectiveRepeat.SelectiveRepeat('selective_A',1)
             maquina2 = classes.selectiveRepeat.SelectiveRepeat('selective_B',2)
             maquina1.startMachine(maquina2)
+            maquina2.startReceiverMachine(maquina1)
             
         case _:
             print("Otra maquina")

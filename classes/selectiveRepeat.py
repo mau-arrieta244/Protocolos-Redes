@@ -3,6 +3,7 @@ import time
 import threading
 import classes.maquina as maquina
 import classes.frame as frame
+from random import random
 
 class SelectiveRepeat(maquina.Maquina):
 
@@ -11,7 +12,7 @@ class SelectiveRepeat(maquina.Maquina):
         self.capaRed = self.CapaRed()
         self.capaEnlace = self.CapaEnlace()
         self.pausa = False
-        self.capaFisicaRecibidos = []
+        #self.capaFisicaRecibidos = []
 
     def toLinkLayer(self):
         '''
@@ -23,7 +24,7 @@ class SelectiveRepeat(maquina.Maquina):
                 if paquete:
                     self.capaEnlace.paquetes.append(paquete)
                     #self.capaEnlace.framesEnviar.append(paquete)
-                    time.sleep(3)
+                    time.sleep(1)
             else:
                 pass
 
@@ -32,12 +33,18 @@ class SelectiveRepeat(maquina.Maquina):
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
         t3 = threading.Thread(target=self.capaEnlace.crearFrames)
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,4))
+        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,3))
 
         t1.start()
         t2.start()
         t3.start()
         t4.start()
+
+    def startReceiverMachine(self,maquinaDestino:maquina.Maquina):
+        
+        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,0.5))
+        t1.start()
+        
 
     def pauseMachine(self):
         
@@ -74,9 +81,7 @@ class SelectiveRepeat(maquina.Maquina):
                     string = str(count)+"abcd"
                     self.paquetes.append(string)
                     count+=1
-                    #print('\nCondicion paquetes:'+str(self.pausa))
-                    #print("\nUtopia Paquete generado\n")
-                    time.sleep(3)
+                    time.sleep(1)
                 else:
                     pass
 
@@ -96,6 +101,7 @@ class SelectiveRepeat(maquina.Maquina):
             self.framesEnviar = []
             self.window = []
             self.paquetes = []
+            self.capaFisicaRecibidos = []
             self.pausa = False
         
 
@@ -116,20 +122,26 @@ class SelectiveRepeat(maquina.Maquina):
 
                     #si hay frames listos
                     if self.framesEnviar:
+
+                        print("\n Acknowledgements:\n")
+                        for elemento in self.capaFisicaRecibidos:
+                            print(str(elemento.sequenceNumber)+" "+elemento.kind)
+
                         #vamos llenando self.window
                         if (len(self.window)<windowSize):
                             sendingFrame = self.framesEnviar.pop(0)
                             self.window.append(sendingFrame)
-                            time.sleep(3)
+                            time.sleep(1)
 
                         #ventana llena
                         elif (len(self.window)==windowSize):
+                            #los envía todos pero no vacía ventana
                             while(self.window):
                                 sendingFrame = self.window.pop(0)
-                                maquinaDestino.capaFisicaRecibidos.append(sendingFrame)
-                                print("\n ================== \n")
-                                print("\n Frame %s recibido en maquina B !\n" % (sendingFrame.sequenceNumber))
-                                print("\n ================== \n")
+                                #print("\n ================== \n")
+                                #print("\n Frame %s enviado a maquina B !\n" % (sendingFrame.sequenceNumber))
+                                #print("\n ================== \n")
+                                maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
                                 time.sleep(1)
                             #  1) acks llegaron? limpiar window 
                             #  2) no han llegado? wait
@@ -153,11 +165,39 @@ class SelectiveRepeat(maquina.Maquina):
                         newFrame = frame.Frame(count,paquete,'Data')
                         self.framesEnviar.append(newFrame)
                         self.paquetes.clear()
-                        print("\n Frame %d creado en enlace.. \n" % newFrame.sequenceNumber)
+                        #print("\n Frame %d creado en enlace.. \n" % newFrame.sequenceNumber)
                         count+=1
                         time.sleep(1)
                 else:
                     pass
 
+        '''
+        Un ciclo que revisa si ha recibido frames desde otra maquina
+        Si hay frames, los agrega a un buffer
+        Del buffer deben convertirse en paquetes y pasar en orden a la capaRed
+        '''
+        def cicloRecibidos(self,maquinaDestino:maquina.Maquina,porcentaje):
+            while(True):
+                if not self.pausa:
+                    #si hay frames recibidos
+                    if self.capaFisicaRecibidos:
+                        #frame recibido correctamente
+                        if random()<porcentaje:
+                            frameRecibido = self.capaFisicaRecibidos.pop(0)
+                            print("\n Frame %d recibido por maquina B ! \n" % (frameRecibido.sequenceNumber))
+                            ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')
+                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(ackFrame)
+                            time.sleep(1)
+                        #lost packets
+                        else:
+                            frameRecibido = self.capaFisicaRecibidos.pop(0)
+                            print("\n Frame %d perdido... \n" % (frameRecibido.sequenceNumber))
+                            nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
+                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
+                            time.sleep(1)
+
+                else:
+                    time.sleep(1)
+                    pass
                     
-        '''Comunicarme tambien con capa red, pasarle los paquetes recibidos, en  orden'''
+      
