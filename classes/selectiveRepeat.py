@@ -42,7 +42,7 @@ class SelectiveRepeat(maquina.Maquina):
 
     def startReceiverMachine(self,maquinaDestino:maquina.Maquina):
         
-        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,0.5))
+        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,0.8))
         t1.start()
         
 
@@ -123,35 +123,71 @@ class SelectiveRepeat(maquina.Maquina):
                     #si hay frames listos
                     if self.framesEnviar:
 
-                        print("\n Acknowledgements:\n")
-                        for elemento in self.capaFisicaRecibidos:
-                            print(str(elemento.sequenceNumber)+" "+elemento.kind)
-
                         #vamos llenando self.window
+                        #print("\n window len: "+str(len(self.window)))
+                        #print("\n window size: "+str(windowSize))
                         if (len(self.window)<windowSize):
                             sendingFrame = self.framesEnviar.pop(0)
                             self.window.append(sendingFrame)
                             time.sleep(1)
 
                         #ventana llena
-                        elif (len(self.window)==windowSize):
+                        else:
+                            
                             #los envía todos pero no vacía ventana
-                            while(self.window):
-                                sendingFrame = self.window.pop(0)
-                                #print("\n ================== \n")
-                                #print("\n Frame %s enviado a maquina B !\n" % (sendingFrame.sequenceNumber))
-                                #print("\n ================== \n")
+                            buffer = self.window.copy()
+                            while(buffer):
+                                sendingFrame = buffer.pop(0)
                                 maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
                                 time.sleep(1)
-                            #  1) acks llegaron? limpiar window 
-                            #  2) no han llegado? wait
+ 
+                            print("\n Acknowledgements:\n")
+                            for elemento in self.capaFisicaRecibidos:
+                                print(str(elemento.sequenceNumber)+" "+elemento.kind)
+                            
 
+                            #Outlying frames? esperar nak o timeout
+                            while(self.window):
+                                #Acks llegaron? limpiar ventana
+                                if self.capaFisicaRecibidos:
+                                    for elemento in self.capaFisicaRecibidos:
+                                        id = elemento.sequenceNumber
 
-                        else:
-                            print("Condicion rara... revisar")
-                            time.sleep(3)
+                                        #acknowledged
+                                        if(elemento.kind=='ack'):
+                                            #borrar de window
+                                            self.deleteById(id)
+                                            #borrar el ack
+                                            self.capaFisicaRecibidos.remove(elemento)
+                                            time.sleep(1)
+
+                                        #not acknowledged
+                                        else:
+                                            
+                                            resendFrame = self.getFrameById(id)
+                                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
+                                            #borrar el nak pero no el frame de window
+                                            self.capaFisicaRecibidos.remove(elemento)
+   
+                                else:
+                                    pass
                 else:
                     pass
+        
+        
+        def deleteById(self,sequenceNumber):
+            for elemento in self.window:
+                if elemento.sequenceNumber == sequenceNumber:
+                    self.window.remove(elemento)
+                    return
+                
+        def getFrameById(self,sequenceNumber):
+            for elemento in self.window:
+                if elemento.sequenceNumber == sequenceNumber:
+                    return elemento
+                
+                    
+        
         '''
         Un ciclo que revisa si ha recibido paquetes de capaRed
         Si hay paquetes, los convierte a Frames y agrega a framesEnviar []
@@ -165,7 +201,6 @@ class SelectiveRepeat(maquina.Maquina):
                         newFrame = frame.Frame(count,paquete,'Data')
                         self.framesEnviar.append(newFrame)
                         self.paquetes.clear()
-                        #print("\n Frame %d creado en enlace.. \n" % newFrame.sequenceNumber)
                         count+=1
                         time.sleep(1)
                 else:
