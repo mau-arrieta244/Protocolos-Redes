@@ -55,7 +55,7 @@ def startSimulation():
             maquina1.startMachine(maquina2)
 
         case 'Stop and Wait':
-            classes.stopWait.iniciarSimulacion()
+            classes.stopWait.ejecucion()
             pass
 
         case 'PAR':

@@ -1,6 +1,7 @@
 import time
 import threading
 import random
+from frame import Frame
 
 class Event:
     FRAME_ARRIVAL = "frame_arrival"
@@ -9,12 +10,6 @@ class Packet:
     def __init__(self, data):
         self.data = data
 
-class Frame:
-
-    def __init__(self,pSequenceNumber,pPacket,pKind):
-        self.sequenceNumber = pSequenceNumber
-        self.packet = pPacket
-        self.kind = pKind
 
 def wait_for_event(event):
     event.wait()  # Esperar hasta que se marque el evento
@@ -35,6 +30,7 @@ class Maquina:
             self.paquetes = []
             self.framesRecibidos = []
             self.condicionGenerarPaquetes = True
+            self.pausa = False
 
         #Genera Paquetes
         def from_network_layer(self):
@@ -43,11 +39,13 @@ class Maquina:
             return packet
         
         def to_physical_layer(self, frame, destino):
-            destino.capaEnlace.framesRecibidos.append(frame)
+            
             if (frame.kind == 'ACK'):
                 print(f"Sending ACK confirmation {frame.sequenceNumber}")
             else:
                 print(f"Sending frame {frame.sequenceNumber}: {frame.packet.data}")
+                destino.capaEnlace.framesRecibidos.append(frame)
+            
             time.sleep(1)
 
         
@@ -55,6 +53,7 @@ class Maquina:
         def __init__(self):
             self.framesEnviar = []
             self.framesRecibidos = []
+            self.pausa = False
 
         def from_physical_layer(self):
             frameRecibido = self.framesRecibidos[-1]
@@ -64,6 +63,11 @@ class Maquina:
             frame = Frame(packet)
             '''
             return frameRecibido
+        
+        def print_received_frames(self):
+            print("Frames recibidos en la capa de enlace:")
+            for frame in self.framesRecibidos:
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
 
         # Entrega información desde una trama entrante a la capa de red.
         def to_network_layer(self, packet):
@@ -71,49 +75,61 @@ class Maquina:
 
 
     def sender(self,event, destino):
-        contFrames = 0
+        contFrames = 1
 
         while True:
-            packet = self.capaRed.from_network_layer() #generar paquete
-            frame = Frame(contFrames,packet,'DATA') #genera Frame con info de paquete
-            contFrames += 1
-            self.capaRed.to_physical_layer(frame,destino) # Enviar frame
-            
-            # Esperar la confirmación (ACK) del receptor
-            event.wait()
-            event.clear()  # Limpiar el evento para futuras esperas
+            if (not self.pausa):
+                time.sleep(2)
+                packet = self.capaRed.from_network_layer() #generar paquete
+                frame = Frame(contFrames,packet,'DATA') #genera Frame con info de paquete
+                contFrames += 1
+                self.capaRed.to_physical_layer(frame,destino) # Enviar frame
+                
+                # Esperar la confirmación (ACK) del receptor
+                event.wait()
+                event.clear()  # Limpiar el evento para futuras esperas
 
+    
 
     def receiver(self, event, origen):
         while True:
-            if (self.capaEnlace.framesRecibidos):
-                received_frame = self.capaEnlace.from_physical_layer()
-                self.capaEnlace.to_network_layer(received_frame.packet)
-                
-                # Enviar acknowledgment (dummy frame) para despertar al emisor
-                dummy_packet = Packet("ACK")
-                dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet,'ACK')
-                self.capaRed.to_physical_layer(dummy_frame,origen)
-                
-                #Vaciar recibidos:
-                self.capaRed.framesRecibidos = []
+            if (not self.pausa):
+                if (self.capaEnlace.framesRecibidos):
+                    received_frame = self.capaEnlace.from_physical_layer()
+                    #Vaciar recibidos:
+                    self.capaEnlace.framesRecibidos = []
 
-                # Marcar el evento para despertar al emisor
-                event.set()
+                    self.capaEnlace.to_network_layer(received_frame.packet)
+                    
+                    # Enviar acknowledgment (dummy frame) para despertar al emisor
+                    dummy_packet = Packet("ACK")
+                    dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet,'ACK')
+                    self.capaRed.to_physical_layer(dummy_frame,origen)
+                    
+                    # Marcar el evento para despertar al emisor
+                    event.set()
 
+    def pauseMachine(self):
+        self.pausa = True
 
-#EJECUCION----------------------------------------------
-# Crear una bandera de evento
-frame_event = threading.Event()
+    def resumeMachine(self):
+        self.pausa = False
 
-maquina1 = Maquina('Maquina1',1)
-maquina2 = Maquina('Maquina2',2)
+def ejecucion():
+    #EJECUCION----------------------------------------------
+    # Crear una bandera de evento
+    frame_event = threading.Event()
 
-# Simulación de la comunicación entre sender y receiver
-sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event,maquina2))
-receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_event,maquina1))
+    maquina1 = Maquina('Maquina1',1)
+    maquina2 = Maquina('Maquina2',2)
 
-# Iniciar el sender y esperar un poco antes de iniciar el receiver
-sender_thread.start()
-time.sleep(2)  # Esperar para asegurar que el sender haya enviado al menos un frame
-receiver_thread.start()
+    # Simulación de la comunicación entre sender y receiver
+    sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event,maquina2))
+    receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_event,maquina1))
+
+    # Iniciar el sender y esperar un poco antes de iniciar el receiver
+    sender_thread.start()
+    time.sleep(5)  # Esperar para asegurar que el sender haya enviado al menos un frame
+    receiver_thread.start()
+
+ejecucion()
