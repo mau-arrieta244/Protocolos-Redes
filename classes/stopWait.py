@@ -101,6 +101,7 @@ class StopWait(maquina.Maquina):
         while True:
             if (not self.pausa):
                 if (self.capaEnlace.framesRecibidos):
+                    time.sleep(1)
                     received_frame = self.capaEnlace.from_physical_layer()
                     #Vaciar recibidos:
                     self.capaEnlace.framesRecibidos = []
