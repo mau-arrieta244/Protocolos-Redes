@@ -1,23 +1,29 @@
 import time
 import threading
 import random
-from frame import Frame
+import classes.maquina as maquina
 
 class Event:
     FRAME_ARRIVAL = "frame_arrival"
+
 
 class Packet:
     def __init__(self, data):
         self.data = data
 
+class Frame():
+
+    def __init__(self,pSequenceNumber,pPacket,pKind):
+        self.sequenceNumber = pSequenceNumber
+        self.packet = pPacket
+        self.kind = pKind
 
 def wait_for_event(event):
     event.wait()  # Esperar hasta que se marque el evento
 
-class Maquina: 
+class StopWait(maquina.Maquina): 
     def __init__(self,pName,pId):
-        self.name = pName
-        self.id = pId
+        super().__init__(pName, pId)
 
         self.capaRed = self.CapaRed()
         self.capaEnlace = self.CapaEnlace()
@@ -115,13 +121,10 @@ class Maquina:
     def resumeMachine(self):
         self.pausa = False
 
-def ejecucion():
+def ejecucion(maquina1, maquina2):
     #EJECUCION----------------------------------------------
     # Crear una bandera de evento
     frame_event = threading.Event()
-
-    maquina1 = Maquina('Maquina1',1)
-    maquina2 = Maquina('Maquina2',2)
 
     # Simulación de la comunicación entre sender y receiver
     sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event,maquina2))
@@ -132,4 +135,3 @@ def ejecucion():
     time.sleep(5)  # Esperar para asegurar que el sender haya enviado al menos un frame
     receiver_thread.start()
 
-ejecucion()
