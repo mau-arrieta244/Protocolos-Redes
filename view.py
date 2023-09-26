@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import threading
 from PIL import ImageTk
-import classes.utopia,classes.selectiveRepeat
+import classes.utopia,classes.selectiveRepeat, classes.stopWait
 
 
 
@@ -54,7 +54,8 @@ def startSimulation():
             maquina2 = classes.utopia.Utopia('Utopia_B',2)
             maquina1.startMachine(maquina2)
 
-        case 'StopAndWait':
+        case 'Stop and Wait':
+            classes.stopWait.ejecucion()
             pass
 
         case 'PAR':
