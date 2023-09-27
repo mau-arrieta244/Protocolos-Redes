@@ -53,6 +53,7 @@ def startSimulation():
             maquina1 = classes.utopia.Utopia('Utopia_A',1)
             maquina2 = classes.utopia.Utopia('Utopia_B',2)
             maquina1.startMachine(maquina2)
+            maquina2.startReceiverMachine()
 
         case 'Stop and Wait':
             maquina1 = classes.stopWait .StopWait('Maquina1',1)
@@ -86,12 +87,40 @@ def startSimulation():
 # Pausar Simulacion Seleccionada =====================================
 
 def pauseSimulation():
-    maquina1.pauseMachine()
+    #maquina1.pauseMachine() así estaba antes...
+    global maquina1
+    global maquina2
+    tipoSimulacion = combobox.get()
+
+    match tipoSimulacion:
+        case 'Utopia':
+            maquina1.pauseMachine()
+
+        case 'Stop and Wait':
+            maquina1.pauseMachine()
+
+        case 'PAR':
+            pass
+
+        case 'sliding':
+            pass
+
+        case 'goBack':
+            pass
+
+        case 'Selective Repeat':
+            maquina1.pauseMachine()
+            maquina2.pauseMachine()
+            
+        case _:
+            print("Otra maquina")
+            return
 
 # Continuar Simulacion pausada =====================================
 
 def resumeSimulation():
     maquina1.resumeMachine()
+    maquina2.resumeMachine()
 
 
 # Boton inicio =========================================
@@ -120,6 +149,18 @@ btn = Button(frame,text="Resumir",font="Helvetica 10",
              width=15,height=2)
 btn.place(x=550,y=10)
 
+# Mostrar frames maquina 1 =========================================
+
+
+def showSent():
+    maquina1.mostrarEnviados()
+
+# Mostrar frames maquina 2 =========================================
+
+
+def showReceived():
+    maquina2.mostrarRecibidos()
+
 # Imagenes máquina =========================================
 
 
@@ -127,14 +168,14 @@ photo = ImageTk.PhotoImage(file='images/computer.png')
 img_label = Label(frame,image=photo)
 img_label.photo = photo
 
-btn2 = Button(frame,image=photo,borderwidth=0)
+btn2 = Button(frame,image=photo,borderwidth=0,command=showSent)
 btn2.place(x=50,y=200)
 
 photo2 = ImageTk.PhotoImage(file='images/server.png')
 img_label2 = Label(frame,image=photo2)
 img_label2.photo = photo2
 
-btn3 = Button(frame,image=photo2,borderwidth=0)
+btn3 = Button(frame,image=photo2,borderwidth=0,command=showReceived)
 btn3.place(x=340,y=200)
 
 
