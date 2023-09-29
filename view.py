@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import threading
 from PIL import ImageTk
-import classes.utopia,classes.selectiveRepeat, classes.stopWait 
+import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow
 
 
 
@@ -33,7 +33,7 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 options = ['Utopia','Stop and Wait']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
-combobox['values'] = ['Utopia','Stop and Wait','Selective Repeat']
+combobox['values'] = ['Utopia','Stop and Wait','Selective Repeat', 'Sliding Windows (1bit)']
 combobox.place(x=10,y=40)
 
 
@@ -59,13 +59,14 @@ def startSimulation():
             maquina1 = classes.stopWait .StopWait('Maquina1',1)
             maquina2 = classes.stopWait .StopWait('Maquina2',2)
             classes.stopWait .ejecucion(maquina1=maquina1, maquina2=maquina2)
-            pass
 
         case 'PAR':
             pass
 
-        case 'sliding':
-            pass
+        case 'Sliding Windows (1bit)':
+            maquina1 = classes.slidingWindow.SlidingWindow('Maquina1',1)
+            maquina2 = classes.slidingWindow.SlidingWindow('Maquina2',2)
+            classes.slidingWindow.ejecucion(maquina1=maquina1, maquina2=maquina2)
 
         case 'goBack':
             pass
@@ -102,8 +103,9 @@ def pauseSimulation():
         case 'PAR':
             pass
 
-        case 'sliding':
-            pass
+        case 'Sliding Windows (1bit)':
+            maquina1.pauseMachine()
+            maquina2.pauseMachine()
 
         case 'goBack':
             pass
