@@ -62,9 +62,9 @@ class SelectiveRepeat(maquina.Maquina):
         t3.start()
         t4.start()
 
-    def startReceiverMachine(self,maquinaDestino:maquina.Maquina):
+    def startReceiverMachine(self,maquinaDestino:maquina.Maquina,porcentaje=0.8):
         
-        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,0.8))
+        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,porcentaje))
         t1.start()
         
 
@@ -237,6 +237,8 @@ class SelectiveRepeat(maquina.Maquina):
         Un ciclo que revisa si ha recibido frames desde otra maquina
         Si hay frames, los agrega a un buffer
         Del buffer deben convertirse en paquetes y pasar en orden a la capaRed
+        
+        el porcentaje es porcentaje de error
         '''
         def cicloRecibidos(self,maquinaDestino:maquina.Maquina,porcentaje):
             while(True):
@@ -244,7 +246,7 @@ class SelectiveRepeat(maquina.Maquina):
                     #si hay frames recibidos
                     if self.capaFisicaRecibidos:
                         #frame recibido correctamente
-                        if random()<porcentaje:
+                        if random()>porcentaje:
                             frameRecibido = self.capaFisicaRecibidos.pop(0)
                             print("\n Frame %d recibido por maquina B ! \n" % (frameRecibido.sequenceNumber))
                             ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')

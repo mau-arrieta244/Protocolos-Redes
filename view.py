@@ -37,7 +37,11 @@ combobox['values'] = ['Utopia','Stop and Wait','Selective Repeat', 'Sliding Wind
 combobox.place(x=10,y=40)
 
 
-
+# Porcentaje de paquetes que se reciben con error ================================
+labelPorcentaje = Label(frame,text="Porcentaje de error:  ",font="Helvetica 10")
+labelPorcentaje.place(x=650,y=270)
+entryError = ttk.Entry()
+entryError.place(x=650, y=295)
 
 
 # Iniciar Simulacion Seleccionada =====================================
@@ -72,10 +76,11 @@ def startSimulation():
             pass
 
         case 'Selective Repeat':
+            porcentaje = float(entryError.get())
             maquina1 = classes.selectiveRepeat.SelectiveRepeat('selective_A',1)
             maquina2 = classes.selectiveRepeat.SelectiveRepeat('selective_B',2)
             maquina1.startMachine(maquina2)
-            maquina2.startReceiverMachine(maquina1)
+            maquina2.startReceiverMachine(maquina1,porcentaje)
             
         case _:
             print("Otra maquina")
