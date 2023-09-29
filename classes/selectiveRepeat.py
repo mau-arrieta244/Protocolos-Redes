@@ -14,6 +14,28 @@ class SelectiveRepeat(maquina.Maquina):
         self.pausa = False
         #self.capaFisicaRecibidos = []
 
+
+    '''
+    Mostrar historial de paquetes enviados
+    '''
+    def mostrarEnviados(self):
+        print("\n===================\n")
+        print("\n     Enviados:       \n")
+
+        for elemento in self.capaEnlace.historialEnviados:
+            print("\nFrame #%d" %(elemento.sequenceNumber))
+            print("Contenido: %s" %(elemento.packet))
+
+    '''
+    Mostrar historial de frames recibidos
+    '''
+    def mostrarRecibidos(self):
+        print("\n===================\n")
+        print("\n     Recibidos:       \n")
+        for elemento in self.capaEnlace.historialRecibidos:
+            print("\nFrame #%d" %(elemento.sequenceNumber))
+            print("Contenido: %s" %(elemento.packet))
+
     def toLinkLayer(self):
         '''
         Obtiene paquete de capaRed, lo envía a capaEnlace
@@ -102,6 +124,8 @@ class SelectiveRepeat(maquina.Maquina):
             self.window = []
             self.paquetes = []
             self.capaFisicaRecibidos = []
+            self.historialEnviados = []
+            self.historialRecibidos = []
             self.pausa = False
         
 
@@ -139,6 +163,7 @@ class SelectiveRepeat(maquina.Maquina):
                             while(buffer):
                                 sendingFrame = buffer.pop(0)
                                 maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
+                                self.historialEnviados.append(sendingFrame )
                                 time.sleep(1)
  
                             print("\n Acknowledgements:\n")
@@ -166,6 +191,7 @@ class SelectiveRepeat(maquina.Maquina):
                                             
                                             resendFrame = self.getFrameById(id)
                                             print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
+                                            self.historialEnviados.append(resendFrame)
                                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
                                             #borrar el nak pero no el frame de window
                                             self.capaFisicaRecibidos.remove(elemento)
@@ -223,6 +249,7 @@ class SelectiveRepeat(maquina.Maquina):
                             print("\n Frame %d recibido por maquina B ! \n" % (frameRecibido.sequenceNumber))
                             ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(ackFrame)
+                            self.historialRecibidos.append(frameRecibido)
                             time.sleep(1)
                         #lost packets
                         else:
