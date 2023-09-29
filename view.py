@@ -68,8 +68,8 @@ def startSimulation():
             pass
 
         case 'Sliding Windows (1bit)':
-            maquina1 = classes.slidingWindow.SlidingWindow('Maquina1',1)
-            maquina2 = classes.slidingWindow.SlidingWindow('Maquina2',2)
+            maquina1 = classes.slidingWindow.SlidingWindow('Maquina1',1,20)
+            maquina2 = classes.slidingWindow.SlidingWindow('Maquina2',2,20)
             classes.slidingWindow.ejecucion(maquina1=maquina1, maquina2=maquina2)
 
         case 'goBack':
