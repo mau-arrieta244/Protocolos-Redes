@@ -55,7 +55,7 @@ class SelectiveRepeat(maquina.Maquina):
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
         t3 = threading.Thread(target=self.capaEnlace.crearFrames)
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,3))
+        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,2))
 
         t1.start()
         t2.start()
@@ -133,6 +133,44 @@ class SelectiveRepeat(maquina.Maquina):
             pass
 
 
+        def outlyingFrames(self,maquinaDestino):
+            #Outlying frames? esperar nak o timeout
+            #Acks llegaron? limpiar ventana
+            if self.capaFisicaRecibidos:
+                copia = self.capaFisicaRecibidos.copy()
+                for elemento in copia:
+                    #print("\nelemento: %d existe wtf" %(elemento.sequenceNumber))
+                    id = elemento.sequenceNumber
+
+                    #acknowledged
+                    if(elemento.kind=='ack'):
+                        #borrar de window
+                        self.deleteById(id)
+                        #borrar el ack
+                        self.deleteRecibidosById(id)
+                        #self.capaFisicaRecibidos.remove(elemento)
+                        #print("\n ack  %d borrado..." %(id))
+                        #print(len(self.capaFisicaRecibidos))
+                        #time.sleep(1)
+
+                    #not acknowledged
+                    else:
+                        resendFrame = self.getFrameById(id)
+                        if(resendFrame):
+                            print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
+                            self.historialEnviados.append(resendFrame)
+                            #self.capaFisicaRecibidos.remove(elemento)
+                            self.deleteRecibidosById(id)
+                            #print("\n nak  %d borrado..." %(id))
+                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
+                            #borrar el nak pero no el frame de window
+                            #time.sleep(1)
+                    
+                time.sleep(2)
+                #print("\n viene otro ciclo...")
+            else:
+                pass
+
         '''
         Por hacer:
         -Esperar ack o nak para enviar frames de acuerdo con la ventana.
@@ -147,59 +185,44 @@ class SelectiveRepeat(maquina.Maquina):
                     #si hay frames listos
                     if self.framesEnviar:
 
+                        
                         #vamos llenando self.window
                         #print("\n window len: "+str(len(self.window)))
                         #print("\n window size: "+str(windowSize))
                         if (len(self.window)<windowSize):
                             sendingFrame = self.framesEnviar.pop(0)
                             self.window.append(sendingFrame)
-                            time.sleep(1)
+                            #time.sleep(1)
 
                         #ventana llena
                         else:
-                            
+                            #antes de enviar, revisar de nuevo acks y naks
+                            self.outlyingFrames(maquinaDestino)
                             #los envía todos pero no vacía ventana
                             buffer = self.window.copy()
                             while(buffer):
                                 sendingFrame = buffer.pop(0)
                                 maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
                                 self.historialEnviados.append(sendingFrame )
-                                time.sleep(1)
+                                #time.sleep()
  
+                            time.sleep(2)
                             print("\n Acknowledgements:\n")
                             for elemento in self.capaFisicaRecibidos:
                                 print(str(elemento.sequenceNumber)+" "+elemento.kind)
                             
+                            
+                            self.outlyingFrames(maquinaDestino)
 
-                            #Outlying frames? esperar nak o timeout
-                            while(self.window):
-                                #Acks llegaron? limpiar ventana
-                                if self.capaFisicaRecibidos:
-                                    for elemento in self.capaFisicaRecibidos:
-                                        id = elemento.sequenceNumber
+                            
+                            
+                            
 
-                                        #acknowledged
-                                        if(elemento.kind=='ack'):
-                                            #borrar de window
-                                            self.deleteById(id)
-                                            #borrar el ack
-                                            self.capaFisicaRecibidos.remove(elemento)
-                                            time.sleep(1)
-
-                                        #not acknowledged
-                                        else:
-                                            
-                                            resendFrame = self.getFrameById(id)
-                                            print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
-                                            self.historialEnviados.append(resendFrame)
-                                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
-                                            #borrar el nak pero no el frame de window
-                                            self.capaFisicaRecibidos.remove(elemento)
-   
-                                else:
-                                    pass
+                            
                 else:
                     pass
+        
+        
         
         
         def deleteById(self,sequenceNumber):
@@ -212,6 +235,12 @@ class SelectiveRepeat(maquina.Maquina):
             for elemento in self.window:
                 if elemento.sequenceNumber == sequenceNumber:
                     return elemento
+                
+        def deleteRecibidosById(self,sequenceNumber):
+            for elemento in self.capaFisicaRecibidos:
+                if elemento.sequenceNumber == sequenceNumber:
+                    self.capaFisicaRecibidos.remove(elemento)
+                    return
                 
                     
         
@@ -252,14 +281,16 @@ class SelectiveRepeat(maquina.Maquina):
                             ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(ackFrame)
                             self.historialRecibidos.append(frameRecibido)
-                            time.sleep(1)
+                            #time.sleep(1)
                         #lost packets
                         else:
                             frameRecibido = self.capaFisicaRecibidos.pop(0)
                             print("\n Frame %d perdido... \n" % (frameRecibido.sequenceNumber))
                             nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
-                            time.sleep(1)
+                            #time.sleep(1)
+                        time.sleep(1)
+                        
 
                 else:
                     time.sleep(1)
