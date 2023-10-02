@@ -9,8 +9,12 @@ class SelectiveRepeat(maquina.Maquina):
 
     def __init__(self, pName, pId):
         super().__init__(pName, pId)
-        self.capaRed = self.CapaRed()
-        self.capaEnlace = self.CapaEnlace()
+
+        self.capaRed = self.CapaRed(pName)
+        self.capaEnlace = self.CapaEnlace(pName)
+
+        #self.capaRed = self.CapaRed()
+        #self.capaEnlace = self.CapaEnlace()
         self.pausa = False
         #self.capaFisicaRecibidos = []
 
@@ -50,19 +54,19 @@ class SelectiveRepeat(maquina.Maquina):
             else:
                 pass
 
-    def startMachine(self,maquinaDestino:maquina.Maquina):
+    def startMachine(self,maquinaDestino:maquina.Maquina,ventana):
         
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
         t3 = threading.Thread(target=self.capaEnlace.crearFrames)
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,2))
+        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,ventana))
 
         t1.start()
         t2.start()
         t3.start()
         t4.start()
 
-    def startReceiverMachine(self,maquinaDestino:maquina.Maquina,porcentaje=0.8):
+    def startReceiverMachine(self,maquinaDestino:maquina.Maquina,porcentaje):
         
         t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,porcentaje))
         t1.start()
@@ -83,10 +87,11 @@ class SelectiveRepeat(maquina.Maquina):
 
     class CapaRed:
     
-        def __init__(self):
+        def __init__(self,pName):
             self.paquetes = []
             self.framesRecibidos = []
             self.pausa = False
+            self.name = pName
     
 
         '''
@@ -119,7 +124,7 @@ class SelectiveRepeat(maquina.Maquina):
 
     class CapaEnlace:
 
-        def __init__(self):
+        def __init__(self,pName):
             self.framesEnviar = []
             self.window = []
             self.paquetes = []
@@ -127,6 +132,7 @@ class SelectiveRepeat(maquina.Maquina):
             self.historialEnviados = []
             self.historialRecibidos = []
             self.pausa = False
+            self.name = pName
         
 
         def sendItems(maquinaDestino:maquina.Maquina):
@@ -203,7 +209,7 @@ class SelectiveRepeat(maquina.Maquina):
                             while(buffer):
                                 sendingFrame = buffer.pop(0)
                                 maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
-                                self.historialEnviados.append(sendingFrame )
+                                self.historialEnviados.append(sendingFrame)
                                 #time.sleep()
  
                             time.sleep(2)
@@ -214,6 +220,8 @@ class SelectiveRepeat(maquina.Maquina):
                             
                             self.outlyingFrames(maquinaDestino)
 
+                    else:
+                        time.sleep(1)
                             
                             
                             
@@ -289,7 +297,7 @@ class SelectiveRepeat(maquina.Maquina):
                             nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
                             #time.sleep(1)
-                        time.sleep(1)
+                        #time.sleep(1)
                         
 
                 else:

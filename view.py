@@ -43,6 +43,12 @@ labelPorcentaje.place(x=650,y=270)
 entryError = ttk.Entry()
 entryError.place(x=650, y=295)
 
+# tamanno de ventana ajustable    ================================================
+labelVentana = Label(frame,text="Tamaño de ventana:  ",font="Helvetica 10")
+labelVentana.place(x=650,y=325)
+entryWindow = ttk.Entry()
+entryWindow.place(x=650, y=350)
+
 
 # Iniciar Simulacion Seleccionada =====================================
 # Esto podría ser un Factory...  pero bruh 
@@ -77,9 +83,10 @@ def startSimulation():
 
         case 'Selective Repeat':
             porcentaje = float(entryError.get())
+            ventana = int(entryWindow.get())
             maquina1 = classes.selectiveRepeat.SelectiveRepeat('selective_A',1)
             maquina2 = classes.selectiveRepeat.SelectiveRepeat('selective_B',2)
-            maquina1.startMachine(maquina2)
+            maquina1.startMachine(maquina2,ventana)
             maquina2.startReceiverMachine(maquina1,porcentaje)
             
         case _:
