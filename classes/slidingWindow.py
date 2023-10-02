@@ -156,8 +156,8 @@ def ejecucion(maquina1, maquina2):
     sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event_1,maquina2))
     receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_event_1,maquina1))
 
-    #sender_thread_2 = threading.Thread(target=maquina2.sender, args=(frame_event_2,maquina1))
-    #receiver_thread_2 = threading.Thread(target=maquina1.receiver, args=(frame_event_2,maquina2))
+    sender_thread_2 = threading.Thread(target=maquina2.sender, args=(frame_event_2,maquina1))
+    receiver_thread_2 = threading.Thread(target=maquina1.receiver, args=(frame_event_2,maquina2))
 
     # Iniciar el sender y esperar un poco antes de iniciar el receiver
     sender_thread.start()

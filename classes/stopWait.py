@@ -6,7 +6,6 @@ import classes.maquina as maquina
 class Event:
     FRAME_ARRIVAL = "frame_arrival"
 
-
 class Packet:
     def __init__(self, data):
         self.data = data
@@ -25,38 +24,39 @@ class StopWait(maquina.Maquina):
     def __init__(self,pName,pId):
         super().__init__(pName, pId)
 
-        self.capaRed = self.CapaRed()
-        self.capaEnlace = self.CapaEnlace()
+        self.capaRed = self.CapaRed(pName)
+        self.capaEnlace = self.CapaEnlace(pName)
 
         self.pausa = False
 
     #CAPA DE RED 
     class CapaRed:
-        def __init__(self):
+        def __init__(self,pName):
             self.paquetes = []
             self.framesRecibidos = []
             self.condicionGenerarPaquetes = True
             self.pausa = False
+            self.name = pName
 
         #Genera Paquetes
         def from_network_layer(self):
-            data = f"Data from network layer at time {time.time()}"
+            data = f"Data from network layer at time {time.time()} from: "+self.name
             packet = Packet(data)
             return packet
         
         def to_physical_layer(self, frame, destino):
-            
             if (frame.kind == 'ACK'):
-                print(f"Sending ACK confirmation {frame.sequenceNumber}")
+                print(self.name+ f": Sending ACK confirmation {frame.sequenceNumber}")
             else:
-                print(f"Sending frame {frame.sequenceNumber}: {frame.packet.data}")
+                print(self.name+ f": Sending frame {frame.sequenceNumber} {frame.packet.data}")
                 destino.capaEnlace.framesRecibidos.append(frame)
             
             time.sleep(1)
 
         
     class CapaEnlace:
-        def __init__(self):
+        def __init__(self,pName):
+            self.name = pName
             self.framesEnviar = []
             self.framesRecibidos = []
             self.pausa = False
@@ -77,44 +77,50 @@ class StopWait(maquina.Maquina):
 
         # Entrega información desde una trama entrante a la capa de red.
         def to_network_layer(self, packet):
-            print("Received data in the network layer:", packet.data)
+            print(self.name + ": Received data in the network layer: ", packet.data)
 
 
-    def sender(self,event, destino):
+    def sender(self,frame_arrived, ACK_arrived, destino):
         contFrames = 1
 
         while True:
             if (not self.pausa):
                 time.sleep(2)
+                print(self.name + ": Generando Paquete en Capa de Red")
                 packet = self.capaRed.from_network_layer() #generar paquete
+                print(self.name + ": Generando DATA Frame")
                 frame = Frame(contFrames,packet,'DATA') #genera Frame con info de paquete
                 contFrames += 1
-                self.capaRed.to_physical_layer(frame,destino) # Enviar frame
                 
+                self.capaRed.to_physical_layer(frame,destino) # Enviar frame
+                frame_arrived.set()
+                print(self.name + ": Esperando confirmacion ACK")
                 # Esperar la confirmación (ACK) del receptor
-                event.wait()
-                event.clear()  # Limpiar el evento para futuras esperas
+                ACK_arrived.wait()
+                print(self.name + ": Recibe confirmacion ACK " + str(contFrames-1)+"\n")
+                ACK_arrived.clear()  # Limpiar el evento para futuras esperas
 
     
 
-    def receiver(self, event, origen):
+    def receiver(self, frame_arrived, ACK_arrived, origen):
         while True:
             if (not self.pausa):
-                if (self.capaEnlace.framesRecibidos):
-                    time.sleep(1)
-                    received_frame = self.capaEnlace.from_physical_layer()
-                    #Vaciar recibidos:
-                    self.capaEnlace.framesRecibidos = []
+                frame_arrived.wait()
+                frame_arrived.clear()
+                time.sleep(2)
+                received_frame = self.capaEnlace.from_physical_layer()
+                #Vaciar recibidos:
+                self.capaEnlace.framesRecibidos = []
 
-                    self.capaEnlace.to_network_layer(received_frame.packet)
+                self.capaEnlace.to_network_layer(received_frame.packet)
+                
+                # Enviar acknowledgment (dummy frame) para despertar al emisor
+                dummy_packet = Packet("ACK")
+                dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet,'ACK')
+                self.capaRed.to_physical_layer(dummy_frame,origen)
                     
-                    # Enviar acknowledgment (dummy frame) para despertar al emisor
-                    dummy_packet = Packet("ACK")
-                    dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet,'ACK')
-                    self.capaRed.to_physical_layer(dummy_frame,origen)
-                    
-                    # Marcar el evento para despertar al emisor
-                    event.set()
+                # Marcar el evento para despertar al emisor
+                ACK_arrived.set()
 
     def pauseMachine(self):
         self.pausa = True
@@ -125,11 +131,12 @@ class StopWait(maquina.Maquina):
 def ejecucion(maquina1, maquina2):
     #EJECUCION----------------------------------------------
     # Crear una bandera de evento
-    frame_event = threading.Event()
+    frame_arrived = threading.Event()
+    ACK_arrived = threading.Event()
 
     # Simulación de la comunicación entre sender y receiver
-    sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event,maquina2))
-    receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_event,maquina1))
+    sender_thread = threading.Thread(target=maquina1.sender, args=(frame_arrived,ACK_arrived,maquina2))
+    receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_arrived,ACK_arrived,maquina1))
 
     # Iniciar el sender y esperar un poco antes de iniciar el receiver
     sender_thread.start()

@@ -4,8 +4,8 @@ class Maquina:
         
         self.name = pName
         self.id = pId
-        self.capaRed = self.CapaRed()
-        self.capaEnlace = self.CapaEnlace()
+        self.capaRed = self.CapaRed(pName)
+        self.capaEnlace = self.CapaEnlace(pName)
         self.paquetesRed_Enlace = []
         self.condicionToLinkLayer = True
         self.capaFisicaRecibidos = []
