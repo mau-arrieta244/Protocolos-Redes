@@ -156,16 +156,19 @@ btn = Button(frame,text="Resumir",font="Helvetica 10",
              width=15,height=2)
 btn.place(x=550,y=10)
 
+
 # Mostrar frames maquina 1 =========================================
 
 
 def showSent():
     maquina1.mostrarEnviados()
+    maquina2.mostrarEnviados()
 
 # Mostrar frames maquina 2 =========================================
 
 
 def showReceived():
+    maquina1.mostrarRecibidos()
     maquina2.mostrarRecibidos()
 
 # Imagenes máquina =========================================

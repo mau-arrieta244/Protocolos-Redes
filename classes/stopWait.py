@@ -44,12 +44,7 @@ class StopWait(maquina.Maquina):
             packet = Packet(data)
             return packet
         
-        def to_physical_layer(self, frame, destino):
-            if (frame.kind == 'ACK'):
-                print(self.name+ f": Sending ACK confirmation {frame.sequenceNumber}")
-            else:
-                print(self.name+ f": Sending frame {frame.sequenceNumber} {frame.packet.data}")
-                destino.capaEnlace.framesRecibidos.append(frame)
+        
             
             time.sleep(1)
 
@@ -57,7 +52,7 @@ class StopWait(maquina.Maquina):
     class CapaEnlace:
         def __init__(self,pName):
             self.name = pName
-            self.framesEnviar = []
+            self.framesEnviados = []
             self.framesRecibidos = []
             self.pausa = False
 
@@ -70,16 +65,46 @@ class StopWait(maquina.Maquina):
             '''
             return frameRecibido
         
-        def print_received_frames(self):
-            print("Frames recibidos en la capa de enlace:")
-            for frame in self.framesRecibidos:
-                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
-
         # Entrega información desde una trama entrante a la capa de red.
         def to_network_layer(self, packet):
             print(self.name + ": Received data in the network layer: ", packet.data)
 
+        def to_physical_layer(self, frame, destino):
+            if (frame.kind == 'ACK'):
+                print(self.name+ f": Sending ACK confirmation {frame.sequenceNumber}")
+                destino.capaEnlace.framesRecibidos.append(frame)
+                self.framesEnviados.append(frame)
+            else:
+                print(self.name+ f": Sending frame {frame.sequenceNumber} {frame.packet.data}")
+                destino.capaEnlace.framesRecibidos.append(frame)
+                self.framesEnviados.append(frame)
 
+    def mostrarRecibidos(self):
+            print ("---------------------------------------")
+            print(self.name+": ")
+            print("Frames recibidos:")
+            for frame in self.capaEnlace.framesRecibidos:
+                if (frame.kind == 'DATA'):
+                    print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+            print("\n ACK recibidos:")
+            for frame in self.capaEnlace.framesRecibidos:
+                if (frame.kind == 'ACK'):
+                    print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+    def mostrarEnviados(self):
+        print ("---------------------------------------")
+        print(self.name+": ")
+        print("Frames Enviados:")
+        for frame in self.capaEnlace.framesEnviados:
+            if (frame.kind == 'DATA'):
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+        print("\n ACK Enviados:")
+        for frame in self.capaEnlace.framesEnviados:
+            if (frame.kind == 'ACK'):
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+            
     def sender(self,frame_arrived, ACK_arrived, destino):
         contFrames = 1
 
@@ -92,7 +117,7 @@ class StopWait(maquina.Maquina):
                 frame = Frame(contFrames,packet,'DATA') #genera Frame con info de paquete
                 contFrames += 1
                 
-                self.capaRed.to_physical_layer(frame,destino) # Enviar frame
+                self.capaEnlace.to_physical_layer(frame,destino) # Enviar frame
                 frame_arrived.set()
                 print(self.name + ": Esperando confirmacion ACK")
                 # Esperar la confirmación (ACK) del receptor
@@ -109,15 +134,13 @@ class StopWait(maquina.Maquina):
                 frame_arrived.clear()
                 time.sleep(2)
                 received_frame = self.capaEnlace.from_physical_layer()
-                #Vaciar recibidos:
-                self.capaEnlace.framesRecibidos = []
 
                 self.capaEnlace.to_network_layer(received_frame.packet)
                 
                 # Enviar acknowledgment (dummy frame) para despertar al emisor
                 dummy_packet = Packet("ACK")
                 dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet,'ACK')
-                self.capaRed.to_physical_layer(dummy_frame,origen)
+                self.capaEnlace.to_physical_layer(dummy_frame,origen)
                     
                 # Marcar el evento para despertar al emisor
                 ACK_arrived.set()
