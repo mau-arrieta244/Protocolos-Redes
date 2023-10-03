@@ -52,14 +52,7 @@ class SlidingWindow(Maquina):
             packet = Packet(data)
             return packet
         
-        def to_physical_layer(self, frame, destino):
-            if (frame.kind == 'ACK'):
-                print(self.nombre + f": ACK confirmation {frame.sequenceNumber}"  +'\n' )
-            else:
-                print(self.nombre + f": Sending frame {frame.sequenceNumber}: {frame.packet.data}")
-                destino.capaEnlace.framesRecibidos.append(frame)
-            
-            time.sleep(1)
+        
 
     
     class CapaEnlace:
@@ -67,6 +60,7 @@ class SlidingWindow(Maquina):
             self.framesEnviar = []
             self.framesRecibidos = []
             self.framesEnviados = []
+            self.frameErrores = []
             self.pausa = False
             self.nombre = pName
             self.tasaErrores = pTasaErrores
@@ -86,9 +80,21 @@ class SlidingWindow(Maquina):
             #Generar error!
             if (self.simular_error(self.tasaErrores)):
                 print(f"Error de transmision en Frame: {frameRecibido.sequenceNumber}")
+                self.frameErrores.append(self.framesRecibidos.pop(-1))
                 return None
             return frameRecibido
         
+        def to_physical_layer(self, frame, destino):
+            if (frame.kind == 'ACK'):
+                print(self.nombre + f": ACK confirmation {frame.sequenceNumber}"  +'\n' )
+            else:
+                print(self.nombre + f": Sending frame {frame.sequenceNumber}: {frame.packet.data}")
+
+            destino.capaEnlace.framesRecibidos.append(frame)
+            self.framesEnviados.append(frame)
+            
+            time.sleep(1)
+
         def print_received_frames(self):
             print("Frames recibidos en la capa de enlace:")
             for frame in self.framesRecibidos:
@@ -100,19 +106,26 @@ class SlidingWindow(Maquina):
 
     def sender(self, frame_arrived, ACK_arrived, destino):
         contFrames = 0
-
+        frame = None
         while True:
             if not self.pausa:
                 time.sleep(2)
-                packet = self.capaRed.from_network_layer()  # generar paquete
-                frame = Frame(contFrames, packet, 'DATA')  # genera Frame con info de paquete
-                self.capaRed.to_physical_layer(frame, destino)  # Enviar frame
-                frame_arrived.set()
+
+                if (frame == None):
+                    packet = self.capaRed.from_network_layer()  # generar paquete
+                    frame = Frame(contFrames, packet, 'DATA')  # genera Frame con info de paquete
+                    self.capaEnlace.to_physical_layer(frame, destino)  # Enviar frame
+                    frame_arrived.set()
+                
+                else:
+                    self.capaEnlace.to_physical_layer(frame, destino)  # Enviar frame
+                    frame_arrived.set()
 
                 # Esperar la confirmación (ACK) del receptor
                 ack_received = ACK_arrived.wait(timeout=10)  # espera 5 segundos por el ACK
                 ACK_arrived.clear()  # Limpiar el evento para futuras esperas
                 if ack_received:
+                    frame = None
                     print(self.name + " si recibe ACK " + str(contFrames))
                     contFrames = 1 - contFrames #La venta es de 1, los frames van de 0 a 1
                     
@@ -131,6 +144,10 @@ class SlidingWindow(Maquina):
             for frame in self.capaEnlace.framesRecibidos:
                 if (frame.kind == 'ACK'):
                     print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+            print("\n Recibidos con error:")
+            for frame in self.capaEnlace.frameErrores:
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
 
     def mostrarEnviados(self):
         print ("---------------------------------------")
@@ -153,7 +170,6 @@ class SlidingWindow(Maquina):
                 frame_arrived.clear()
                 time.sleep(1)
                 received_frame = self.capaEnlace.from_physical_layer()
-                self.capaEnlace.framesRecibidos = []
 
                 if received_frame is None:
                     print("No enviar ACK")
@@ -165,7 +181,7 @@ class SlidingWindow(Maquina):
                         # Enviar acknowledgment (dummy frame) para despertar al emisor
                         dummy_packet = Packet("ACK")
                         dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet, 'ACK')
-                        self.capaRed.to_physical_layer(dummy_frame, origen)
+                        self.capaEnlace.to_physical_layer(dummy_frame, origen)
 
                         contEsperado = 1 - received_frame.sequenceNumber
                         # Marcar el evento para despertar al emisor
@@ -202,7 +218,7 @@ def ejecucion(maquina1, maquina2):
     receiver_thread.start()
 
     # Iniciar el sender y esperar un poco antes de iniciar el receiver
-    #sender_thread_2.start()
-    #time.sleep(5)  # Esperar para asegurar que el sender haya enviado al menos un frame
-    #receiver_thread_2.start()
+    sender_thread_2.start()
+    time.sleep(5)  # Esperar para asegurar que el sender haya enviado al menos un frame
+    receiver_thread_2.start()
 
