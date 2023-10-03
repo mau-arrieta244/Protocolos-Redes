@@ -1,5 +1,5 @@
 
-
+import time
 
 class Frame():
 
@@ -7,3 +7,12 @@ class Frame():
         self.sequenceNumber = pSequenceNumber
         self.packet = pPacket
         self.kind = pKind
+        self.timer = True
+
+    def startTimer(self,segundos):
+            while(segundos>0):
+                time.sleep(1)
+                segundos-=1
+            #frame "vencido"
+            self.timer = False
+            

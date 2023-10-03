@@ -7,8 +7,8 @@ class Utopia(maquina.Maquina):
 
     def __init__(self, pName, pId):
         super().__init__(pName, pId)
-        self.capaRed = self.CapaRed()
-        self.capaEnlace = self.CapaEnlace()
+        self.capaRed = self.CapaRed(pName)
+        self.capaEnlace = self.CapaEnlace(pName)
         self.pausa = False
         self.capaFisicaRecibidos = []
 
@@ -79,10 +79,11 @@ class Utopia(maquina.Maquina):
 
     class CapaRed:
     
-        def __init__(self):
+        def __init__(self,pName):
             self.paquetes = []
             self.framesRecibidos = []
             self.pausa = False
+            self.name = pName
     
 
         '''
@@ -117,13 +118,14 @@ class Utopia(maquina.Maquina):
 
     class CapaEnlace:
 
-        def __init__(self):
+        def __init__(self,pName):
             self.framesEnviar = []
             self.paquetes = []
             self.capaFisicaRecibidos = []
             self.historialEnviados = []
             self.historialRecibidos = []
             self.pausa = False
+            self.name = pName
 
         '''
         Un ciclo que revisa si ha recibido paquetes de capaRed

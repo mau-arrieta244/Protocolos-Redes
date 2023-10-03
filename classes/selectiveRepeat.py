@@ -138,6 +138,10 @@ class SelectiveRepeat(maquina.Maquina):
         def sendItems(maquinaDestino:maquina.Maquina):
             pass
 
+        
+                
+
+
 
         def outlyingFrames(self,maquinaDestino):
             #Outlying frames? esperar nak o timeout
@@ -145,19 +149,26 @@ class SelectiveRepeat(maquina.Maquina):
             if self.capaFisicaRecibidos:
                 copia = self.capaFisicaRecibidos.copy()
                 for elemento in copia:
-                    #print("\nelemento: %d existe wtf" %(elemento.sequenceNumber))
+
+                    
                     id = elemento.sequenceNumber
 
+                    #si timer de frame ya vencio y no tenemos ack ni nak...
+                    if(elemento.timer == False):
+                        resendFrame = self.getFrameById(id)
+                        if(resendFrame):
+                            print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
+                            self.historialEnviados.append(resendFrame)
+                            self.deleteRecibidosById(id)
+                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
+                            #borrar el nak pero no el frame de window  
+
                     #acknowledged
-                    if(elemento.kind=='ack'):
+                    elif(elemento.kind=='ack'):
                         #borrar de window
                         self.deleteById(id)
                         #borrar el ack
                         self.deleteRecibidosById(id)
-                        #self.capaFisicaRecibidos.remove(elemento)
-                        #print("\n ack  %d borrado..." %(id))
-                        #print(len(self.capaFisicaRecibidos))
-                        #time.sleep(1)
 
                     #not acknowledged
                     else:
@@ -165,15 +176,10 @@ class SelectiveRepeat(maquina.Maquina):
                         if(resendFrame):
                             print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
                             self.historialEnviados.append(resendFrame)
-                            #self.capaFisicaRecibidos.remove(elemento)
                             self.deleteRecibidosById(id)
-                            #print("\n nak  %d borrado..." %(id))
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
-                            #borrar el nak pero no el frame de window
-                            #time.sleep(1)
-                    
+                            #borrar el nak pero no el frame de window    
                 time.sleep(2)
-                #print("\n viene otro ciclo...")
             else:
                 pass
 
@@ -185,21 +191,14 @@ class SelectiveRepeat(maquina.Maquina):
         def toPhysicalLayer(self,maquinaDestino:maquina.Maquina,windowSize):
             while(True):
                 if not self.pausa:
-                    #checkear acks o naks que hayan llegado...(missing)
-                    #si window size es 2, hasta que lleguen ambos acks o naks libero window
 
                     #si hay frames listos
                     if self.framesEnviar:
 
-                        
                         #vamos llenando self.window
-                        #print("\n window len: "+str(len(self.window)))
-                        #print("\n window size: "+str(windowSize))
                         if (len(self.window)<windowSize):
                             sendingFrame = self.framesEnviar.pop(0)
                             self.window.append(sendingFrame)
-                            #time.sleep(1)
-
                         #ventana llena
                         else:
                             #antes de enviar, revisar de nuevo acks y naks
@@ -221,6 +220,7 @@ class SelectiveRepeat(maquina.Maquina):
                             self.outlyingFrames(maquinaDestino)
 
                     else:
+                        self.outlyingFrames(maquinaDestino)
                         time.sleep(1)
                             
                             
@@ -270,6 +270,15 @@ class SelectiveRepeat(maquina.Maquina):
                 else:
                     pass
 
+        
+        def cksum_err(self,maquinaDestino:maquina.Maquina):
+            frameRecibido = self.capaFisicaRecibidos.pop(0)
+            print("\n Frame %d perdido... \n" % (frameRecibido.sequenceNumber))
+            nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
+            t1 = threading.Thread(target= lambda:nakFrame.startTimer(15))
+            t1.start()
+            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
+
         '''
         Un ciclo que revisa si ha recibido frames desde otra maquina
         Si hay frames, los agrega a un buffer
@@ -280,22 +289,23 @@ class SelectiveRepeat(maquina.Maquina):
         def cicloRecibidos(self,maquinaDestino:maquina.Maquina,porcentaje):
             while(True):
                 if not self.pausa:
+                    
                     #si hay frames recibidos
                     if self.capaFisicaRecibidos:
+                        
                         #frame recibido correctamente
                         if random()>porcentaje:
                             frameRecibido = self.capaFisicaRecibidos.pop(0)
                             print("\n Frame %d recibido por maquina B ! \n" % (frameRecibido.sequenceNumber))
                             ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')
+                            t1 = threading.Thread(target= lambda:ackFrame.startTimer(15))
+                            t1.start()
                             maquinaDestino.capaEnlace.capaFisicaRecibidos.append(ackFrame)
                             self.historialRecibidos.append(frameRecibido)
                             #time.sleep(1)
                         #lost packets
                         else:
-                            frameRecibido = self.capaFisicaRecibidos.pop(0)
-                            print("\n Frame %d perdido... \n" % (frameRecibido.sequenceNumber))
-                            nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
-                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
+                            self.cksum_err(maquinaDestino)
                             #time.sleep(1)
                         #time.sleep(1)
                         
