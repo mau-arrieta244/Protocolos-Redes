@@ -10,6 +10,7 @@ class Maquina:
         self.condicionToLinkLayer = True
         self.capaFisicaRecibidos = []
         self.pausa = False
+        self.pTasaErrores = 0
 
     
 

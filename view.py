@@ -38,16 +38,20 @@ combobox.place(x=10,y=40)
 
 
 # Porcentaje de paquetes que se reciben con error ================================
-labelPorcentaje = Label(frame,text="Porcentaje de error:  ",font="Helvetica 10")
-labelPorcentaje.place(x=650,y=270)
+
 entryError = ttk.Entry()
-entryError.place(x=650, y=295)
+entryError.place(x=650, y=320)
+
+btn = Button(frame,text="Porcentaje de error:",font="Helvetica 10",
+             command= lambda:set_tasaError(entryError.get()),
+             width=15,height=2)
+btn.place(x=650,y=270)
 
 # tamanno de ventana ajustable    ================================================
 labelVentana = Label(frame,text="Tamaño de ventana:  ",font="Helvetica 10")
-labelVentana.place(x=650,y=325)
+labelVentana.place(x=650,y=390)
 entryWindow = ttk.Entry()
-entryWindow.place(x=650, y=350)
+entryWindow.place(x=650, y=415)
 
 
 # Iniciar Simulacion Seleccionada =====================================
@@ -177,6 +181,12 @@ def showSent():
 def showReceived():
     maquina1.mostrarRecibidos()
     maquina2.mostrarRecibidos()
+
+# SET porcentaje de error =====================================
+
+def set_tasaError(tasa):
+    maquina1.setTasaErrores(tasa)
+    maquina2.setTasaErrores(tasa)
 
 # Imagenes máquina =========================================
 

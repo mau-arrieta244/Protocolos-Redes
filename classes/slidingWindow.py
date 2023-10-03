@@ -10,6 +10,7 @@ class Maquina:
     def __init__(self,pName,pId, pTasaErrores):
         self.name = pName
         self.id = pId
+        self.tasaErrores = pTasaErrores
         self.capaRed = self.CapaRed(pName)
         self.capaEnlace = self.CapaEnlace(pName,pTasaErrores)
         self.paquetesRed_Enlace = []
@@ -195,6 +196,15 @@ class SlidingWindow(Maquina):
 
     def resumeMachine(self):
         self.pausa = False
+
+    def setTasaErrores(self, tasa):
+        if tasa.isdigit() and 0 <= int(tasa) <= 100:
+            self.tasaErrores = int(tasa)
+            self.capaEnlace.tasaErrores =  int(tasa)
+            print(f'Tasa de Errores Actualizada: {int(tasa)}')
+        else:
+            print(f'Error al cambiar la tasa de error')
+        
 
 def ejecucion(maquina1, maquina2):
     #EJECUCION----------------------------------------------
