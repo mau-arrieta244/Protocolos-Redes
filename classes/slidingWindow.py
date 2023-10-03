@@ -80,7 +80,7 @@ class SlidingWindow(Maquina):
             frameRecibido = self.framesRecibidos[-1]
             #Generar error!
             if (self.simular_error(self.tasaErrores)):
-                print(f"Error de transmision en Frame: {frameRecibido.sequenceNumber}")
+                print(self.nombre + f" cksum_err!! Error de transmision en Frame: {frameRecibido.sequenceNumber}")
                 self.frameErrores.append(self.framesRecibidos.pop(-1))
                 return None
             return frameRecibido
@@ -131,7 +131,7 @@ class SlidingWindow(Maquina):
                     contFrames = 1 - contFrames #La venta es de 1, los frames van de 0 a 1
                     
                 else:
-                    print("Se agota el tiempo de espera, vuelve a enviar el frame")
+                    print(self.name +" ack_timeout!!! Se agota el tiempo de espera, vuelve a enviar el frame")
 
     def mostrarRecibidos(self):
             print ("---------------------------------------")
