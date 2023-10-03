@@ -66,6 +66,7 @@ class SlidingWindow(Maquina):
         def __init__(self, pName,pTasaErrores):
             self.framesEnviar = []
             self.framesRecibidos = []
+            self.framesEnviados = []
             self.pausa = False
             self.nombre = pName
             self.tasaErrores = pTasaErrores
@@ -97,8 +98,8 @@ class SlidingWindow(Maquina):
         def to_network_layer(self, packet):
             print(self.nombre + ": Received data in the network layer:", packet.data)
 
-    def sender(self, event, destino):
-        contFrames = 1
+    def sender(self, frame_arrived, ACK_arrived, destino):
+        contFrames = 0
 
         while True:
             if not self.pausa:
@@ -106,29 +107,59 @@ class SlidingWindow(Maquina):
                 packet = self.capaRed.from_network_layer()  # generar paquete
                 frame = Frame(contFrames, packet, 'DATA')  # genera Frame con info de paquete
                 self.capaRed.to_physical_layer(frame, destino)  # Enviar frame
+                frame_arrived.set()
 
                 # Esperar la confirmación (ACK) del receptor
-                ack_received = event.wait(timeout=10)  # espera 5 segundos por el ACK
+                ack_received = ACK_arrived.wait(timeout=10)  # espera 5 segundos por el ACK
+                ACK_arrived.clear()  # Limpiar el evento para futuras esperas
                 if ack_received:
-                    contFrames += 1
-                    print(self.name + " si recibe ACK " + str(contFrames - 1))
+                    print(self.name + " si recibe ACK " + str(contFrames))
+                    contFrames = 1 - contFrames #La venta es de 1, los frames van de 0 a 1
+                    
                 else:
                     print("Se agota el tiempo de espera, vuelve a enviar el frame")
-                event.clear()  # Limpiar el evento para futuras esperas
 
+    def mostrarRecibidos(self):
+            print ("---------------------------------------")
+            print(self.name+": ")
+            print("Frames recibidos:")
+            for frame in self.capaEnlace.framesRecibidos:
+                if (frame.kind == 'DATA'):
+                    print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
 
-    def receiver(self, event, origen):
+            print("\n ACK recibidos:")
+            for frame in self.capaEnlace.framesRecibidos:
+                if (frame.kind == 'ACK'):
+                    print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+    def mostrarEnviados(self):
+        print ("---------------------------------------")
+        print(self.name+": ")
+        print("Frames Enviados:")
+        for frame in self.capaEnlace.framesEnviados:
+            if (frame.kind == 'DATA'):
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+        print("\n ACK Enviados:")
+        for frame in self.capaEnlace.framesEnviados:
+            if (frame.kind == 'ACK'):
+                print(f"Sequence Number: {frame.sequenceNumber}, Kind: {frame.kind}, Data: {frame.packet.data}")
+
+    def receiver(self, frame_arrived, ACK_arrived, origen):
+        contEsperado = 0
         while True:
-            if not self.pausa:
-                if self.capaEnlace.framesRecibidos:
-                    time.sleep(1)
-                    received_frame = self.capaEnlace.from_physical_layer()
-                    self.capaEnlace.framesRecibidos = []
+            if not self.pausa: 
+                frame_arrived.wait()
+                frame_arrived.clear()
+                time.sleep(1)
+                received_frame = self.capaEnlace.from_physical_layer()
+                self.capaEnlace.framesRecibidos = []
 
-                    if received_frame is None:
-                        print("No enviar ACK")
-                        
-                    else:
+                if received_frame is None:
+                    print("No enviar ACK")
+                    
+                else:
+                    if (received_frame.sequenceNumber == contEsperado):
                         self.capaEnlace.to_network_layer(received_frame.packet)
 
                         # Enviar acknowledgment (dummy frame) para despertar al emisor
@@ -136,8 +167,11 @@ class SlidingWindow(Maquina):
                         dummy_frame = Frame(received_frame.sequenceNumber, dummy_packet, 'ACK')
                         self.capaRed.to_physical_layer(dummy_frame, origen)
 
+                        contEsperado = 1 - received_frame.sequenceNumber
                         # Marcar el evento para despertar al emisor
-                        event.set()
+                        ACK_arrived.set()
+                    else:
+                        print("# de Secuencia no coincide - No enviar ACK")
 
 
     def pauseMachine(self):
@@ -149,15 +183,18 @@ class SlidingWindow(Maquina):
 def ejecucion(maquina1, maquina2):
     #EJECUCION----------------------------------------------
     # Crear una bandera de evento
-    frame_event_1 = threading.Event()
-    frame_event_2 = threading.Event()
+    frame_arrived_1 = threading.Event()
+    frame_arrived_2 = threading.Event()
+
+    ACK_arrived_1 = threading.Event()
+    ACK_arrived_2 = threading.Event()
 
     # Simulación de la comunicación entre sender y receiver
-    sender_thread = threading.Thread(target=maquina1.sender, args=(frame_event_1,maquina2))
-    receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_event_1,maquina1))
+    sender_thread = threading.Thread(target=maquina1.sender, args=(frame_arrived_1, ACK_arrived_1, maquina2))
+    receiver_thread = threading.Thread(target=maquina2.receiver, args=(frame_arrived_1, ACK_arrived_1, maquina1))
 
-    sender_thread_2 = threading.Thread(target=maquina2.sender, args=(frame_event_2,maquina1))
-    receiver_thread_2 = threading.Thread(target=maquina1.receiver, args=(frame_event_2,maquina2))
+    sender_thread_2 = threading.Thread(target=maquina2.sender, args=(frame_arrived_2, ACK_arrived_2, maquina1))
+    receiver_thread_2 = threading.Thread(target=maquina1.receiver, args=(frame_arrived_2, ACK_arrived_2, maquina2))
 
     # Iniciar el sender y esperar un poco antes de iniciar el receiver
     sender_thread.start()
