@@ -12,7 +12,6 @@ class Maquina:
         self.pausa = False
         self.pTasaErrores = 0
 
-    
 
     def toLinkLayer(self):
         pass

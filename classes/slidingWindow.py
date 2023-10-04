@@ -187,8 +187,9 @@ class SlidingWindow(Maquina):
                         contEsperado = 1 - received_frame.sequenceNumber
                         # Marcar el evento para despertar al emisor
                         ACK_arrived.set()
-                    else:
-                        print("# de Secuencia no coincide - No enviar ACK")
+
+                   # else:
+                       # print(self.name + " # de Secuencia no coincide - No enviar ACK")
 
 
     def pauseMachine(self):
