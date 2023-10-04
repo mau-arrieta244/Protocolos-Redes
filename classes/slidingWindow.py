@@ -207,7 +207,7 @@ class SlidingWindow(Maquina):
             print(f'Error al cambiar la tasa de error')
         
 
-def ejecucion(maquina1, maquina2):
+def startMachine(maquina1, maquina2):
     #EJECUCION----------------------------------------------
     # Crear una bandera de evento
     frame_arrived_1 = threading.Event()

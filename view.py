@@ -30,10 +30,10 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 
 
 # Create Dropdown menu ================================
-options = ['Utopia','Stop and Wait']
+options = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)' ,'Selective Repeat']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
-combobox['values'] = ['Utopia','Stop and Wait','PAR','Selective Repeat', 'Sliding Windows (1bit)']
+combobox['values'] = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)' ,'Selective Repeat']
 combobox.place(x=10,y=40)
 
 
@@ -72,17 +72,17 @@ def startSimulation():
         case 'Stop and Wait':
             maquina1 = classes.stopWait .StopWait('Maquina1',1)
             maquina2 = classes.stopWait .StopWait('Maquina2',2)
-            classes.stopWait .ejecucion(maquina1=maquina1, maquina2=maquina2)
+            classes.stopWait .startMachine(maquina1=maquina1, maquina2=maquina2)
 
         case 'PAR':
             maquina1 = classes.par.PAR('Maquina1',1,20)
             maquina2 = classes.par.PAR('Maquina2',2,20)
-            classes.par.execution(maquina1, maquina2)
+            classes.par.startMachine(maquina1, maquina2)
 
         case 'Sliding Windows (1bit)':
             maquina1 = classes.slidingWindow.SlidingWindow('Maquina1',1,20)
             maquina2 = classes.slidingWindow.SlidingWindow('Maquina2',2,20)
-            classes.slidingWindow.ejecucion(maquina1=maquina1, maquina2=maquina2)
+            classes.slidingWindow.startMachine(maquina1=maquina1, maquina2=maquina2)
 
         case 'goBack':
             pass

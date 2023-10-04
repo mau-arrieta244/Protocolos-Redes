@@ -161,7 +161,7 @@ class PAR(Maquina):
             print(f'Error al cambiar la tasa de error')
 
 # Función para ejecutar la simulación
-def execution(machine1, machine2):
+def startMachine(machine1, machine2):
     frame_event = threading.Event()  # Crear un evento
 
     sender_thread = threading.Thread(target=machine1.sender, args=(frame_event, machine2))

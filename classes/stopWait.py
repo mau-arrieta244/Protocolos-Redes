@@ -151,7 +151,7 @@ class StopWait(maquina.Maquina):
     def resumeMachine(self):
         self.pausa = False
 
-def ejecucion(maquina1, maquina2):
+def startMachine(maquina1, maquina2):
     #EJECUCION----------------------------------------------
     # Crear una bandera de evento
     frame_arrived = threading.Event()
