@@ -5,8 +5,6 @@ from PIL import ImageTk
 import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow, classes.par
 
 
-
-
 root = Tk()
 root.title('Seleccion de Protocolo')
 
@@ -33,7 +31,7 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 options = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)' ,'Selective Repeat']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
-combobox['values'] = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)' ,'Selective Repeat']
+combobox['values'] = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)', 'Go-Back-N' ,'Selective Repeat']
 combobox.place(x=10,y=40)
 
 

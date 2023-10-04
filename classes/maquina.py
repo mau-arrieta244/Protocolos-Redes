@@ -5,7 +5,7 @@ class Maquina:
         self.name = pName
         self.id = pId
         self.capaRed = self.CapaRed(pName)
-        self.capaEnlace = self.CapaEnlace(pName)
+        self.capaFisica = self.CapaFisica(pName)
         self.paquetesRed_Enlace = []
         self.condicionToLinkLayer = True
         self.capaFisicaRecibidos = []
@@ -27,9 +27,9 @@ class Maquina:
         '''
         Genera paquetes con strings aleatorios
         Los almacena en self.paquetes
-        De self.paquetes se enviaran a CapaEnlace
-        En CapaEnlace se convierten en Frames
-        En CapaEnlace se almacenan en framesEnviar
+        De self.paquetes se enviaran a CapaFisica
+        En CapaFisica se convierten en Frames
+        En CapaFisica se almacenan en framesEnviar
         '''
         def generarPaquetes(self):
             pass
@@ -48,7 +48,7 @@ class Maquina:
 
 
 
-    class CapaEnlace:
+    class CapaFisica:
 
         def __init__(self):
             self.framesEnviar = []

@@ -15,7 +15,7 @@ class Maquina:
         self.name = pName
         self.id = pId
         self.capaRed = self.CapaRed()
-        self.capaEnlace = self.CapaEnlace(pTasaErrores)
+        self.capaFisica = self.CapaFisica(pTasaErrores)
         self.paquetesRed_Enlace = []
         self.condicionToLinkLayer = True
         self.capaFisicaRecibidos = []
@@ -57,18 +57,18 @@ class PAR(Maquina):
                 return frame.sequenceNumber
             else:
                 print(f"----------------------------------------------------Sending frame {frame.sequenceNumber}: {frame.packet.data}----------------------------------------------------")
-                destino.capaEnlace.framesRecibidos.append(frame)
+                destino.capaFisica.framesRecibidos.append(frame)
 
     # Clase para la capa de enlace
-    class CapaEnlace:
+    class CapaFisica:
         def __init__(self, tasaError):
             self.framesEnviar = []
             self.framesRecibidos = []
             self.pausa = False
             self.tasaError = tasaError
 
-        def CrearCapaEnlace(self, tasaError):
-            return self.CapaEnlace(tasaError)
+        def CrearCapaFisica(self, tasaError):
+            return self.CapaFisica(tasaError)
 
         def simular_error(self, tasa_error_porcentaje):
             # Generar un número aleatorio entre 0 y 99 para representar el porcentaje de error
@@ -107,7 +107,7 @@ class PAR(Maquina):
                 packet = self.capaRed.from_network_layer()  # Genera un paquete
                 newFrame = frame.Frame(sequenceNumber, packet, 'DATA')  # Crea un marco con el paquete
                 self.capaRed.to_physical_layer(newFrame,destination)
-                ultimo_frame = destination.capaEnlace.return_last_frame()
+                ultimo_frame = destination.capaFisica.return_last_frame()
                 ack_received = event.wait(timeout=5)
                 if ack_received:
                     ackedSequenceNumber = ultimo_frame.sequenceNumber
@@ -123,16 +123,16 @@ class PAR(Maquina):
         expected_sequence_number = 1
         while True:
             if (not self.pausa):
-                if (self.capaEnlace.framesRecibidos):
+                if (self.capaFisica.framesRecibidos):
                     time.sleep(1)
-                    received_frame = self.capaEnlace.from_physical_layer()
-                    self.capaEnlace.framesRecibidos = []
+                    received_frame = self.capaFisica.from_physical_layer()
+                    self.capaFisica.framesRecibidos = []
 
                     if received_frame is None:
                         print("No enviar ACK")
                     else:
                         if received_frame.sequenceNumber == expected_sequence_number:
-                            self.capaEnlace.to_network_layer(received_frame.packet)
+                            self.capaFisica.to_network_layer(received_frame.packet)
                             expected_sequence_number += 1
                             print("Número de secuencia esperado en el receiver: ",received_frame.sequenceNumber)
 
@@ -155,7 +155,7 @@ class PAR(Maquina):
 
     def setTasaErrores(self, tasa):
         if tasa.isdigit() and 0 <= int(tasa) <= 100:
-            self.capaEnlace.tasaError =  int(tasa)
+            self.capaFisica.tasaError =  int(tasa)
             print(f'Tasa de Errores Actualizada: {int(tasa)}')
         else:
             print(f'Error al cambiar la tasa de error')

@@ -11,10 +11,10 @@ class SelectiveRepeat(maquina.Maquina):
         super().__init__(pName, pId)
 
         self.capaRed = self.CapaRed(pName)
-        self.capaEnlace = self.CapaEnlace(pName)
+        self.capaFisica = self.CapaFisica(pName)
 
         #self.capaRed = self.CapaRed()
-        #self.capaEnlace = self.CapaEnlace()
+        #self.capaFisica = self.CapaFisica()
         self.pausa = False
         #self.capaFisicaRecibidos = []
 
@@ -26,7 +26,7 @@ class SelectiveRepeat(maquina.Maquina):
         print("\n===================\n")
         print("\n     Enviados:       \n")
 
-        for elemento in self.capaEnlace.historialEnviados:
+        for elemento in self.capaFisica.historialEnviados:
             print("\nFrame #%d" %(elemento.sequenceNumber))
             print("Contenido: %s" %(elemento.packet))
 
@@ -36,20 +36,20 @@ class SelectiveRepeat(maquina.Maquina):
     def mostrarRecibidos(self):
         print("\n===================\n")
         print("\n     Recibidos:       \n")
-        for elemento in self.capaEnlace.historialRecibidos:
+        for elemento in self.capaFisica.historialRecibidos:
             print("\nFrame #%d" %(elemento.sequenceNumber))
             print("Contenido: %s" %(elemento.packet))
 
     def toLinkLayer(self):
         '''
-        Obtiene paquete de capaRed, lo envía a capaEnlace
+        Obtiene paquete de capaRed, lo envía a capaFisica
         '''
         while(True):
             if not self.pausa:
                 paquete = self.capaRed.enviarPaquete()
                 if paquete:
-                    self.capaEnlace.paquetes.append(paquete)
-                    #self.capaEnlace.framesEnviar.append(paquete)
+                    self.capaFisica.paquetes.append(paquete)
+                    #self.capaFisica.framesEnviar.append(paquete)
                     time.sleep(1)
             else:
                 pass
@@ -58,8 +58,8 @@ class SelectiveRepeat(maquina.Maquina):
         
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
-        t3 = threading.Thread(target=self.capaEnlace.crearFrames)
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino,ventana))
+        t3 = threading.Thread(target=self.capaFisica.crearFrames)
+        t4 = threading.Thread(target=lambda:self.capaFisica.toPhysicalLayer(maquinaDestino,ventana))
 
         t1.start()
         t2.start()
@@ -68,7 +68,7 @@ class SelectiveRepeat(maquina.Maquina):
 
     def startReceiverMachine(self,maquinaDestino:maquina.Maquina,porcentaje):
         
-        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos(maquinaDestino,porcentaje))
+        t1 = threading.Thread(target=lambda:self.capaFisica.cicloRecibidos(maquinaDestino,porcentaje))
         t1.start()
         
 
@@ -76,13 +76,13 @@ class SelectiveRepeat(maquina.Maquina):
         
         self.pausa = True
         self.capaRed.pausa = True
-        self.capaEnlace.pausa = True
+        self.capaFisica.pausa = True
 
     def resumeMachine(self):
         
         self.pausa = False
         self.capaRed.pausa = False
-        self.capaEnlace.pausa = False
+        self.capaFisica.pausa = False
         
 
     class CapaRed:
@@ -97,9 +97,9 @@ class SelectiveRepeat(maquina.Maquina):
         '''
         Genera paquetes con strings aleatorios
         Los almacena en self.paquetes
-        De self.paquetes se enviaran a CapaEnlace
-        En CapaEnlace se convierten en Frames
-        En CapaEnlace se almacenan en framesEnviar
+        De self.paquetes se enviaran a CapaFisica
+        En CapaFisica se convierten en Frames
+        En CapaFisica se almacenan en framesEnviar
         '''
         def generarPaquetes(self):
             count = 0
@@ -114,7 +114,7 @@ class SelectiveRepeat(maquina.Maquina):
 
         '''
         Retorna ultimo paquete generado en self.paquetes
-        Lo utiliza Maquina para enviar a CapaEnlace.framesEnviar
+        Lo utiliza Maquina para enviar a CapaFisica.framesEnviar
         '''
         def enviarPaquete(self):
             if self.paquetes:
@@ -122,7 +122,7 @@ class SelectiveRepeat(maquina.Maquina):
                 self.paquetes.clear()
                 return(last)
 
-    class CapaEnlace:
+    class CapaFisica:
 
         def __init__(self,pName):
             self.framesEnviar = []
@@ -160,7 +160,7 @@ class SelectiveRepeat(maquina.Maquina):
                             print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
                             self.historialEnviados.append(resendFrame)
                             self.deleteRecibidosById(id)
-                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
+                            maquinaDestino.capaFisica.capaFisicaRecibidos.append(resendFrame)
                             #borrar el nak pero no el frame de window  
 
                     #acknowledged
@@ -177,7 +177,7 @@ class SelectiveRepeat(maquina.Maquina):
                             print("\n Frame %d reenviado! \n" % (resendFrame.sequenceNumber))
                             self.historialEnviados.append(resendFrame)
                             self.deleteRecibidosById(id)
-                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(resendFrame)
+                            maquinaDestino.capaFisica.capaFisicaRecibidos.append(resendFrame)
                             #borrar el nak pero no el frame de window    
                 time.sleep(2)
             else:
@@ -207,7 +207,7 @@ class SelectiveRepeat(maquina.Maquina):
                             buffer = self.window.copy()
                             while(buffer):
                                 sendingFrame = buffer.pop(0)
-                                maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
+                                maquinaDestino.capaFisica.capaFisicaRecibidos.append(sendingFrame)
                                 self.historialEnviados.append(sendingFrame)
                                 #time.sleep()
  
@@ -277,7 +277,7 @@ class SelectiveRepeat(maquina.Maquina):
             nakFrame = frame.Frame(frameRecibido.sequenceNumber,None,'nak')
             t1 = threading.Thread(target= lambda:nakFrame.startTimer(15))
             t1.start()
-            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(nakFrame)
+            maquinaDestino.capaFisica.capaFisicaRecibidos.append(nakFrame)
 
         '''
         Un ciclo que revisa si ha recibido frames desde otra maquina
@@ -300,7 +300,7 @@ class SelectiveRepeat(maquina.Maquina):
                             ackFrame = frame.Frame(frameRecibido.sequenceNumber,None,'ack')
                             t1 = threading.Thread(target= lambda:ackFrame.startTimer(15))
                             t1.start()
-                            maquinaDestino.capaEnlace.capaFisicaRecibidos.append(ackFrame)
+                            maquinaDestino.capaFisica.capaFisicaRecibidos.append(ackFrame)
                             self.historialRecibidos.append(frameRecibido)
                             #time.sleep(1)
                         #lost packets

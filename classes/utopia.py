@@ -8,7 +8,7 @@ class Utopia(maquina.Maquina):
     def __init__(self, pName, pId):
         super().__init__(pName, pId)
         self.capaRed = self.CapaRed(pName)
-        self.capaEnlace = self.CapaEnlace(pName)
+        self.capaFisica = self.CapaFisica(pName)
         self.pausa = False
         self.capaFisicaRecibidos = []
 
@@ -20,7 +20,7 @@ class Utopia(maquina.Maquina):
         print("\n===================\n")
         print("\n     Enviados:       \n")
 
-        for elemento in self.capaEnlace.historialEnviados:
+        for elemento in self.capaFisica.historialEnviados:
             print("\nFrame #%d" %(elemento.sequenceNumber))
             print("Contenido: %s" %(elemento.packet))
 
@@ -30,19 +30,19 @@ class Utopia(maquina.Maquina):
     def mostrarRecibidos(self):
         print("\n===================\n")
         print("\n     Recibidos:       \n")
-        for elemento in self.capaEnlace.historialRecibidos:
+        for elemento in self.capaFisica.historialRecibidos:
             print("\nFrame #%d" %(elemento.sequenceNumber))
             print("Contenido: %s" %(elemento.packet))
 
     def toLinkLayer(self):
         '''
-        Obtiene paquete de capaRed, lo envía a capaEnlace
+        Obtiene paquete de capaRed, lo envía a capaFisica
         '''
         while(True):
             if not self.pausa:
                 paquete = self.capaRed.enviarPaquete()
                 if paquete:
-                    self.capaEnlace.paquetes.append(paquete)
+                    self.capaFisica.paquetes.append(paquete)
                     time.sleep(1)
             else:
                 pass
@@ -51,8 +51,8 @@ class Utopia(maquina.Maquina):
         
         t1 = threading.Thread(target=self.capaRed.generarPaquetes)
         t2 = threading.Thread(target=self.toLinkLayer)
-        t3 = threading.Thread(target=lambda:self.capaEnlace.crearFrames())
-        t4 = threading.Thread(target=lambda:self.capaEnlace.toPhysicalLayer(maquinaDestino))
+        t3 = threading.Thread(target=lambda:self.capaFisica.crearFrames())
+        t4 = threading.Thread(target=lambda:self.capaFisica.toPhysicalLayer(maquinaDestino))
 
         t1.start()
         t2.start()
@@ -61,20 +61,20 @@ class Utopia(maquina.Maquina):
 
     def startReceiverMachine(self):
         
-        t1 = threading.Thread(target=lambda:self.capaEnlace.cicloRecibidos())
+        t1 = threading.Thread(target=lambda:self.capaFisica.cicloRecibidos())
         t1.start()
 
     def pauseMachine(self):
         
         self.pausa = True
         self.capaRed.pausa = True
-        self.capaEnlace.pausa = True
+        self.capaFisica.pausa = True
 
     def resumeMachine(self):
         
         self.pausa = False
         self.capaRed.pausa = False
-        self.capaEnlace.pausa = False
+        self.capaFisica.pausa = False
         
 
     class CapaRed:
@@ -89,9 +89,9 @@ class Utopia(maquina.Maquina):
         '''
         Genera paquetes con strings aleatorios
         Los almacena en self.paquetes
-        De self.paquetes se enviaran a CapaEnlace
-        En CapaEnlace se convierten en Frames
-        En CapaEnlace se almacenan en framesEnviar
+        De self.paquetes se enviaran a CapaFisica
+        En CapaFisica se convierten en Frames
+        En CapaFisica se almacenan en framesEnviar
         '''
         def generarPaquetes(self):
             count = 0
@@ -107,7 +107,7 @@ class Utopia(maquina.Maquina):
 
         '''
         Retorna ultimo paquete generado en self.paquetes
-        Lo utiliza Maquina para enviar a CapaEnlace.framesEnviar
+        Lo utiliza Maquina para enviar a CapaFisica.framesEnviar
         '''
         def enviarPaquete(self):
             if self.paquetes:
@@ -116,7 +116,7 @@ class Utopia(maquina.Maquina):
                 packet = self.paquetes.pop(0)
                 return(packet)
 
-    class CapaEnlace:
+    class CapaFisica:
 
         def __init__(self,pName):
             self.framesEnviar = []
@@ -158,7 +158,7 @@ class Utopia(maquina.Maquina):
                         sendingFrame = self.framesEnviar.pop(0)
                         print("\n=============================\n")
                         print("\nUtopia Paquete %d enviado!\n" %(sendingFrame.sequenceNumber))
-                        maquinaDestino.capaEnlace.capaFisicaRecibidos.append(sendingFrame)
+                        maquinaDestino.capaFisica.capaFisicaRecibidos.append(sendingFrame)
                         self.historialEnviados.append(sendingFrame)
                         time.sleep(2)
                 else:
