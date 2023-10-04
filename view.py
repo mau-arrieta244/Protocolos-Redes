@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import threading
 from PIL import ImageTk
-import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow
+import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow, classes.par
 
 
 
@@ -33,7 +33,7 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 options = ['Utopia','Stop and Wait']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
-combobox['values'] = ['Utopia','Stop and Wait','Selective Repeat', 'Sliding Windows (1bit)']
+combobox['values'] = ['Utopia','Stop and Wait','PAR','Selective Repeat', 'Sliding Windows (1bit)']
 combobox.place(x=10,y=40)
 
 
@@ -75,7 +75,9 @@ def startSimulation():
             classes.stopWait .ejecucion(maquina1=maquina1, maquina2=maquina2)
 
         case 'PAR':
-            pass
+            maquina1 = classes.par.PAR('Maquina1',1,20)
+            maquina2 = classes.par.PAR('Maquina2',2,20)
+            classes.par.execution(maquina1, maquina2)
 
         case 'Sliding Windows (1bit)':
             maquina1 = classes.slidingWindow.SlidingWindow('Maquina1',1,20)
@@ -117,7 +119,7 @@ def pauseSimulation():
             maquina1.pauseMachine()
 
         case 'PAR':
-            pass
+            maquina1.pauseMachine()
 
         case 'Sliding Windows (1bit)':
             maquina1.pauseMachine()
