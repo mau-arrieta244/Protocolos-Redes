@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import threading
 from PIL import ImageTk
-import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow, classes.par
+import classes.utopia,classes.selectiveRepeat, classes.stopWait , classes.slidingWindow, classes.par, classes.GoBackN
 
 
 root = Tk()
@@ -28,7 +28,7 @@ root.geometry('%dx%d+%d+%d' % (800, 600, x, y))
 
 
 # Create Dropdown menu ================================
-options = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)' ,'Selective Repeat']
+options = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)','Go-Back-N' ,'Selective Repeat']
 combobox = ttk.Combobox(frame,textvariable = protocolo,
                         width=33,state="readonly")
 combobox['values'] = ['Utopia','Stop and Wait','PAR','Sliding Windows (1bit)', 'Go-Back-N' ,'Selective Repeat']
@@ -82,8 +82,13 @@ def startSimulation():
             maquina2 = classes.slidingWindow.SlidingWindow('Maquina2',2,20)
             classes.slidingWindow.startMachine(maquina1=maquina1, maquina2=maquina2)
 
-        case 'goBack':
-            pass
+        case 'Go-Back-N':
+            porcentaje = float(entryError.get())
+            ventana = int(entryWindow.get())
+            maquina1 = classes.GoBackN.GoBackN('GoBackN', 1, porcentaje)
+            maquina2 = classes.GoBackN.GoBackN('GoBackN', 2, porcentaje)
+            maquina1.startMachine(maquina2, ventana)
+            maquina2.startReceiverMachine(maquina1, porcentaje)
 
         case 'Selective Repeat':
             porcentaje = float(entryError.get())
@@ -123,8 +128,9 @@ def pauseSimulation():
             maquina1.pauseMachine()
             maquina2.pauseMachine()
 
-        case 'goBack':
-            pass
+        case 'Go-Back-N':
+            maquina1.pauseMachine()
+            maquina2.pauseMachine()
 
         case 'Selective Repeat':
             maquina1.pauseMachine()

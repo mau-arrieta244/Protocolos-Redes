@@ -10,6 +10,7 @@ class Event:
     CKSUM_ERR = "cksum_err"
     TIMEOUT = "timeout"
 
+
 class Maquina:
     def __init__(self, pName, pId, pTasaErrores):
         self.name = pName
@@ -78,7 +79,7 @@ class PAR(Maquina):
         def to_physical_layer(self, frame, destino):
 
             if (frame.kind == 'ACK'):
-                print(f"Sending ACK confirmation {frame.sequenceNumber}")
+                print(f"Enviando ACK con número:  {frame.sequenceNumber}")
                 destino.capaFisica.framesRecibidos.append(frame)
                 self.framesEnviados.append(frame)
                 return frame.sequenceNumber
@@ -92,7 +93,7 @@ class PAR(Maquina):
         def from_physical_layer(self):
             frameRecibido = self.framesRecibidos[-1]
             if (self.simular_error(self.tasaError)):
-                print(f"Error de transmision en Frame: {frameRecibido.sequenceNumber}")
+                print(f"ERROR: CK_SUM en Frame: {frameRecibido.sequenceNumber}")
                 self.frameErrores.append(self.framesRecibidos.pop(-1))
                 return None
 
@@ -136,7 +137,7 @@ class PAR(Maquina):
                         print("Número de acknowledgement esperado: ",sequenceNumber)
                         sequenceNumber += 1
                 else:
-                    print("Se agota el tiempo de espera, vuelve a enviar el frame")
+                    print("ERROR: TIMEOUT, Se agota el tiempo de espera, vuelve a enviar el frame")
                 ACK_arrived.clear()  # Limpia el evento para futuras esperas
 
     # Método del receptor
@@ -152,17 +153,21 @@ class PAR(Maquina):
                 received_frame = self.capaFisica.from_physical_layer()
 
                 if received_frame is None:
-                    print("No enviar ACK")
+                    pass
                 else:
                     if received_frame.sequenceNumber == expected_sequence_number:
                         self.capaFisica.to_network_layer(received_frame.packet)
+                        print("Número de secuencia esperado en el receiver: ", received_frame.sequenceNumber,
+                              ", número de secuencia obtenido: ", expected_sequence_number)
                         expected_sequence_number += 1
-                        print("Número de secuencia esperado en el receiver: ",received_frame.sequenceNumber)
+
 
                         # Enviar acknowledgment (dummy frame) para despertar al emisor
                         dummy_packet = Packet("ACK")
                         dummy_frame = frame.Frame(received_frame.sequenceNumber, dummy_packet, 'ACK')
                         self.capaFisica.to_physical_layer(dummy_frame, origen)
+                    else:
+                        print("ERROR: Número de secuencia esperado en el receiver: ",received_frame.sequenceNumber,", número de secuencia obtenido: ",expected_sequence_number)
 
                         # Marcar el evento para despertar al emisor
                     ACK_arrived.set()
