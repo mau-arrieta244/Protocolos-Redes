@@ -15,4 +15,8 @@ class Frame():
                 segundos-=1
             #frame "vencido"
             self.timer = False
-            
+    
+    def __str__(self):
+        return f"Frame #{self.sequenceNumber} - Kind: {self.kind}, Packet: {self.packet}"
+    
+    
